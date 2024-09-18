@@ -38,6 +38,27 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 		private readonly account?: AccountInfo,
 	) {}
 
+	private functionToken?: string;
+
+	private async setFunctionToken() {
+		if (!this.account) {
+			throw new Error("Account is required for acquiring function token");
+		}
+		if (!this.functionToken) {
+			const functionTokenResponse = await axios.post(
+				process.env.TOKEN_PROVIDER_URL + "/.auth/login/aad",
+				{
+					access_token: this.account.idToken,
+				},
+			);
+
+			if (functionTokenResponse.status !== 200) {
+				throw new Error("Failed to get function token");
+			}
+			this.functionToken = functionTokenResponse.data.authenticationToken;
+		}
+	}
+
 	public async fetchOrdererToken(tenantId: string, documentId?: string): Promise<ITokenResponse> {
 		return {
 			jwt: await this.getAfrToken(tenantId, documentId, this.account),
@@ -58,14 +79,10 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 		if (!account) {
 			throw new Error("Account is required for acquiring AFR token");
 		}
-		const functionTokenResponse = await axios.post(process.env.TOKEN_PROVIDER_URL + '/.auth/login/aad', {
-			access_token: account.idToken
-		});
 
-		if (functionTokenResponse.status !== 200) {
-			throw new Error('Failed to get function token');
+		if (!this.functionToken) {
+			await this.setFunctionToken();
 		}
-		const functionToken = functionTokenResponse.data.authenticationToken;
 
 		let config: AxiosRequestConfig;
 		if (!account) {
@@ -82,7 +99,7 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 			config = {
 				headers: {
 					"Content-Type": "application/json",
-					"X-ZUMO-AUTH": functionToken,
+					"X-ZUMO-AUTH": this.functionToken,
 				},
 				params: {
 					tenantId,

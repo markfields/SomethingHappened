@@ -2,9 +2,9 @@ import { v4 as uuid } from "uuid";
 //* import { createAzureOpenAILanguageModel, createJsonTranslator } from "typechat";
 import { Moment } from "../schema/app_schema.js";
 import { AzureOpenAI } from "openai";
-import axios, { AxiosHeaders, AxiosRequestConfig } from "axios";
+import axios from "axios";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
-import { AccountInfo, AuthenticationResult } from "@azure/msal-browser";
+import { AccountInfo } from "@azure/msal-browser";
 
 const generatedSchema = `
 interface GeneratedSessions {
@@ -89,19 +89,22 @@ Or, another example, if a user asks for two lectures about raccoons where one is
 `;
 
 export async function azureOpenAITokenProvider(account: AccountInfo): Promise<string> {
-	const tokenProvider = process.env.AZURE_OPENAI_TOKEN_PROVIDER_URL;
+	const tokenProvider = process.env.TOKEN_PROVIDER_URL + "/api/getopenaitoken";
 	if (tokenProvider === undefined || tokenProvider === null) {
 		throw Error(
-			"Expected AZURE_OPENAI_TOKEN_PROVIDER_URL to be set in environment variables or local storage",
+			"Expected TOKEN_PROVIDER_URL to be set in environment variables or local storage",
 		);
 	}
 
-	const functionTokenResponse = await axios.post(process.env.TOKEN_PROVIDER_URL + '/.auth/login/aad', {
-		access_token: account.idToken
-	});
+	const functionTokenResponse = await axios.post(
+		process.env.TOKEN_PROVIDER_URL + "/.auth/login/aad",
+		{
+			access_token: account.idToken,
+		},
+	);
 
 	if (functionTokenResponse.status !== 200) {
-		throw new Error('Failed to get function token');
+		throw new Error("Failed to get function token");
 	}
 	const functionToken = functionTokenResponse.data.authenticationToken;
 
@@ -110,7 +113,7 @@ export async function azureOpenAITokenProvider(account: AccountInfo): Promise<st
 		headers: {
 			"Content-Type": "application/json",
 			"X-ZUMO-AUTH": functionToken,
-		}
+		},
 	});
 	return response.data as string;
 }

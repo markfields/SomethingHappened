@@ -23,7 +23,7 @@ const remoteConnectionConfig: AzureRemoteConnectionConfig = {
 	type: "remote",
 	tenantId: process.env.AZURE_TENANT_ID!,
 	tokenProvider: new AzureFunctionTokenProvider(
-		process.env.AZURE_FUNCTION_TOKEN_PROVIDER_URL!,
+		process.env.TOKEN_PROVIDER_URL! + "/api/getAfrToken",
 		azureUser,
 	),
 	endpoint: process.env.AZURE_ORDERER!,
@@ -47,19 +47,19 @@ export function getClientProps(account: AccountInfo): AzureClientProps {
 		type: "remote",
 		tenantId: process.env.AZURE_TENANT_ID!,
 		tokenProvider: new AzureFunctionTokenProvider(
-			process.env.AZURE_FUNCTION_TOKEN_PROVIDER_URL!,
+			process.env.TOKEN_PROVIDER_URL! + "/api/getAfrToken",
 			azureUser,
-			account
+			account,
 		),
 		endpoint: process.env.AZURE_ORDERER!,
 	};
-	
+
 	const localConnectionConfig: AzureLocalConnectionConfig = {
 		type: "local",
 		tokenProvider: new InsecureTokenProvider("VALUE_NOT_USED", user),
 		endpoint: "http://localhost:7070",
 	};
-	
+
 	const connectionConfig: AzureRemoteConnectionConfig | AzureLocalConnectionConfig = !local
 		? remoteConnectionConfig
 		: localConnectionConfig;

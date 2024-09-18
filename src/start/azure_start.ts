@@ -42,7 +42,10 @@ export async function signedInAzureStart() {
 				if (currentAccounts.length === 0) {
 					// no accounts signed-in, attempt to sign a user in
 					msalInstance.loginRedirect({
-						scopes: ["api://fhl-token-provider.azurewebsites.net/Data.Read"],
+						scopes: [
+							"user.read",
+							"api://fhl-token-provider.azurewebsites.net/Data.Read",
+						],
 					});
 				} else if (currentAccounts.length > 1 || currentAccounts.length === 1) {
 					// The user is singed in.

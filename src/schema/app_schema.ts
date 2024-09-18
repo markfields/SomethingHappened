@@ -3,7 +3,13 @@
  * Licensed under the MIT License.
  */
 
-import { TreeViewConfiguration, SchemaFactory, Tree } from "fluid-framework";
+import {
+	TreeViewConfiguration,
+	SchemaFactory,
+	Tree,
+	TreeNode,
+	TreeArrayNode,
+} from "fluid-framework";
 import { v4 as uuid } from "uuid";
 
 // Schema is defined using a factory object that generates classes for objects as well
@@ -54,20 +60,19 @@ export class Moment extends sf.object(
 		this.abstract = text;
 	}
 
+	public updateTags(newTags: string[]) {
+		this.tags.removeRange();
+		newTags.forEach((tagName) => {
+			const newTag = new Tag({ name: tagName });
+			this.tags.insertAtEnd(newTag);
+		});
+		this.lastChanged = new Date().getTime();
+	}
+
 	// Update the session type and also update the timestamp
 	public updateSessionType(type: keyof typeof MomentType) {
 		this.lastChanged = new Date().getTime();
 		this.sessionType = type;
-	}
-
-	// Add a tag to this moment
-	public addTag(tagName: string) {
-		const existingTag = this.tags.find((tag) => tag.name === tagName);
-		if (!existingTag) {
-			const newTag = new Tag({ name: tagName });
-			this.tags.insertAtEnd(newTag);
-		}
-		this.lastChanged = new Date().getTime();
 	}
 
 	/**

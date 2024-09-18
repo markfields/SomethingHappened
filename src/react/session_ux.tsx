@@ -4,6 +4,7 @@
  */
 
 import React, { Fragment, useEffect, useRef, useState } from "react";
+import { Autocomplete, Box, FilterOptionsState, Paper, TextField, createFilterOptions } from "@mui/material";
 import { Life, Moment, Moments } from "../schema/app_schema.js";
 import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
@@ -25,14 +26,22 @@ export function RootSessionWrapper(props: {
 	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
 	return (
-		<div className="bg-transparent flex flex-col justify-center h-36 z-10">
+		<Paper elevation={3}  
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				justifyContent: "center",
+				zIndex: 10,
+				backgroundColor: "#ccd5ae", 
+			}}
+		>
 			<SessionView setIsDetailsShowing={setIsDetailsOpen} {...props} />
-			<SessionDetails
+			<MomentDetails
 				isOpen={isDetailsOpen}
 				setIsOpen={setIsDetailsOpen}
-				session={props.session}
+				moment={props.session}
 			/>
-		</div>
+		</Paper>
 	);
 }
 
@@ -46,8 +55,8 @@ export function SessionView(props: {
 	const mounted = useRef(false);
 	let unscheduled = false;
 
-	const color = "bg-white";
-	const selectedColor = "bg-yellow-100";
+	const color = "#fefae0";
+	const selectedColor = "#ccd5ae";
 
 	const parent = Tree.parent(props.session);
 	if (!Tree.is(parent, Moments)) return <></>;
@@ -111,11 +120,7 @@ export function SessionView(props: {
 	}, []);
 
 	useEffect(() => {
-		if (selected) {
-			setBgColor(selectedColor);
-		} else {
-			setBgColor(color);
-		}
+		setBgColor(selected ? selectedColor : color);
 	}, [selected]);
 
 	toggle(false);
@@ -173,39 +178,40 @@ export function SessionView(props: {
 		}
 	};
 
-	let borderPostion = "";
-	let hoverMovement = "";
-	unscheduled
-		? ((borderPostion = "border-l-4"), (hoverMovement = "translate-x-3"))
-		: ((borderPostion = "border-t-4"), (hoverMovement = "translate-y-3"));
+	let borderPosition = unscheduled ? "borderLeft" : "borderTop";
+	let hoverMovement = unscheduled ? "translateX(12px)" : "translateY(12px)";
 
 	return (
-		<div
+		<Box
 			onClick={(e) => handleClick(e)}
 			onDoubleClick={(e) => {
-				e.stopPropagation(), props.setIsDetailsShowing(true);
+				e.stopPropagation();
+				props.setIsDetailsShowing(true);
 			}}
-			className={`transition duration-500${
-				status === "exiting" ? " transform ease-out scale-110" : ""
-			}`}
+			sx={{
+				transition: 'transform 0.2s ease-out',
+				transform: status === 'exiting' ? 'scale(1.1)' : 'none',
+			}}
 		>
-			<div
+			<Box
 				ref={attachRef}
-				className={
-					isOver && canDrop
-						? borderPostion + " border-dashed border-gray-500"
-						: borderPostion + " border-dashed border-transparent"
-				}
 			>
-				<div
+				<Paper
 					style={{ opacity: isDragging ? 0.5 : 1 }}
-					className={
-						"relative transition-all flex flex-col rounded " +
-						bgColor +
-						" h-32 w-60 shadow-md hover:shadow-lg p-2 " +
-						" " +
-						(isOver && canDrop ? hoverMovement : "")
-					}
+					sx={{
+						position: 'relative',
+						display: 'flex',
+						flexDirection: 'column',
+						borderRadius: 2,
+						backgroundColor: bgColor,
+						height: 128, 
+						padding: 2,
+						opacity: isDragging ? 0.5 : 1,
+						transition: 'box-shadow 0.3s, transform 0.3s',
+						boxShadow: isOver && canDrop ? 4 : 1,
+						transform: isOver && canDrop ? hoverMovement : 'none',
+					}}
+
 				>
 					<SessionToolbar
 						session={props.session}
@@ -214,9 +220,9 @@ export function SessionView(props: {
 					<SessionTitle session={props.session} update={update} />
 					<SessionTypeLabel session={props.session} />
 					<RemoteSelection show={remoteSelected} />
-				</div>
-			</div>
-		</div>
+				</Paper>
+			</Box>
+		</Box>
 	);
 }
 
@@ -300,10 +306,10 @@ function SessionTypeLabel(props: { session: Moment }): JSX.Element {
 	);
 }
 
-export default function SessionDetails(props: {
+export default function MomentDetails(props: {
 	isOpen: boolean;
 	setIsOpen: (arg: boolean) => void;
-	session: Moment;
+	moment: Moment;
 }): JSX.Element {
 	const buttonClass = "text-white font-bold py-2 px-4 rounded";
 	return (
@@ -317,18 +323,18 @@ export default function SessionDetails(props: {
 				<div>
 					<input
 						className="resize-none border-2 border-gray-500 bg-white mb-2 p-2 text-black w-full h-full"
-						value={props.session.title}
+						value={props.moment.title}
 						onChange={(e) => {
-							props.session.updateTitle(e.target.value);
+							props.moment.updateTitle(e.target.value);
 						}}
 					/>
-					<TypeList session={props.session} />
+					<TypeList session={props.moment} />
 					<textarea
 						rows={5}
 						className="resize-none border-2 border-gray-500 bg-white mb-2 p-2 text-black w-full h-full"
-						value={props.session.abstract}
+						value={props.moment.abstract}
 						onChange={(e) => {
-							props.session.updateAbstract(e.target.value);
+							props.moment.updateAbstract(e.target.value);
 						}}
 					/>
 					<div className="flex flex-row gap-4">
@@ -341,7 +347,7 @@ export default function SessionDetails(props: {
 						<button
 							className={`bg-red-500 hover:bg-red-800 ${buttonClass}`}
 							onClick={() => {
-								props.session.delete(), props.setIsOpen(false);
+								props.moment.delete(), props.setIsOpen(false);
 							}}
 						>
 							Delete Session
@@ -372,8 +378,67 @@ function TypeList(props: { session: Moment }): JSX.Element {
 		);
 	}, [selectedSessionType]);
 
+	const [selectedTags, setSelectedTags] = React.useState<string[]>(props.session.tags.map((tag) => tag.name));
+	const [availableTags, setAvailableTags] = React.useState<string[]>([
+		"Vacation",
+		"Work",
+		"Personal Nutrition",
+	]);
+
+	const filter = createFilterOptions<string>();
+
+	const handleTagChange = (
+		event: React.SyntheticEvent<Element, Event>,
+		newValue: string[] | null,
+	) => {
+		if (newValue !== null) {
+			setSelectedTags(newValue);
+			// Check if the last value exists and is not already in availableTags
+			const lastValue = newValue.at(-1);
+			if (lastValue && !availableTags.includes(lastValue)) {
+				setAvailableTags((prev) => [...prev, lastValue]); // Add new tag to available tags
+			}
+			props.session.updateTags(newValue);
+		}
+	};
+	const filterOptions = (options: string[], params: FilterOptionsState<string>) => {
+		const filtered = filter(options, params);
+		const { inputValue } = params;
+		const isExisting = options.some((option) => inputValue === option);
+
+		// Suggest creating a new tag if it doesn't exist
+		if (inputValue !== "" && !isExisting) {
+			filtered.push(inputValue);
+		}
+
+		return filtered;
+	};
+
 	return (
 		<>
+			<Autocomplete
+				multiple
+				value={selectedTags}
+				onChange={handleTagChange}
+				filterOptions={(options, params) => {
+					const filtered = filterOptions(
+						availableTags.filter((tag) => !selectedTags.includes(tag)),
+						params,
+					);
+					return filtered;
+				}}
+				selectOnFocus
+				clearOnBlur
+				handleHomeEndKeys
+				options={availableTags}
+				getOptionLabel={(option) => option}
+				sx={{ width: 300 }}
+				freeSolo
+				renderInput={(params) => (
+					<TextField {...params} variant="standard" label="Add tags" />
+				)}
+			/>
+
 			<Listbox value={selectedSessionType} onChange={setSelectedSessionType}>
 				<div className="relative mb-2">
 					<Listbox.Button className="relative w-full cursor-pointer resize-none border-2 border-gray-500 bg-white p-2 text-black text-left focus:outline-none">

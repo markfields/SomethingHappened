@@ -175,7 +175,7 @@ export const appTreeConfiguration = new TreeViewConfiguration({
 });
 
 export class Moment2 extends sf.object("Moment", {
-	id: sf.string,
+	id: sf.identifier,
 	createDate: sf.number,
 	/** What happened? */
 	description: sf.string,
@@ -194,7 +194,6 @@ export class Moment2 extends sf.object("Moment", {
 	}
 
 	public updateStoryLineIds(storyLineIds: string[]) {
-		this.description;
 		// Clear the list of IDs and insert provided ones
 		this.storyLineIds.removeRange();
 		storyLineIds.forEach((id) => {
@@ -211,7 +210,7 @@ export class MomentMap extends sf.map("MomentMap", Moment2) {
 }
 
 export class StoryLine extends sf.object("StoryLine", {
-	id: sf.string,
+	id: sf.identifier,
 	name: sf.string,
 	momentIds: sf.array(sf.string),
 }) {

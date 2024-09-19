@@ -11,7 +11,6 @@ import "../output.css";
 import { IFluidContainer, IMember, IServiceAudience, TreeView } from "fluid-framework";
 import { Canvas } from "./canvas_ux.js";
 import { undoRedo } from "../utils/undo.js";
-import Prompt from "./prompt_ux.js";
 import { UserAvatars } from "./avatars_ux.js";
 
 export function ReactApp(props: {
@@ -20,7 +19,6 @@ export function ReactApp(props: {
 	audience: IServiceAudience<IMember>;
 	container: IFluidContainer;
 	undoRedo: undoRedo;
-	insertTemplate: (prompt: string) => Promise<void>;
 }): JSX.Element {
 	const [currentUser, setCurrentUser] = useState<IMember | undefined>(undefined);
 	const [connectionState, setConnectionState] = useState("");
@@ -62,11 +60,6 @@ export function ReactApp(props: {
 					/>
 				</div>
 			</div>
-			<Prompt
-				insertTemplate={props.insertTemplate}
-				isOpen={isPromptOpen}
-				setIsOpen={setIsPromptOpen}
-			/>
 		</>
 	);
 }

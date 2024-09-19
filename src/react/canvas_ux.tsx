@@ -15,22 +15,11 @@ import {
 	TreeView,
 } from "fluid-framework";
 import { RootSessionWrapper } from "./session_ux.js";
-import {
-	Floater,
-	NewDayButton,
-	NewMomentButton,
-	ButtonGroup,
-	UndoButton,
-	RedoButton,
-	DeleteDayButton,
-	ShowPromptButton,
-	Divider,
-	DeleteSessionsButton,
-} from "./button_ux.js";
 import { Moments } from "../schema/app_schema.js";
 import { undoRedo } from "../utils/undo.js";
 import { SessionsView } from "./sessions_ux.js";
 import { TextField } from "@mui/material";
+import { GPTService } from "../services/gptService.js";
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
@@ -112,34 +101,6 @@ export function Canvas(props: {
 				clientSession={props.sessionTree.root}
 				fluidMembers={props.fluidMembers}
 			/>
-			<Floater>
-				<ButtonGroup>
-					<NewMomentButton life={props.lifeTree.root} clientId={clientId} />
-					<NewDayButton
-						days={props.lifeTree.root.days}
-						session={props.sessionTree.root}
-						clientId={clientId}
-					/>
-					<DeleteDayButton
-						days={props.lifeTree.root.days}
-						session={props.sessionTree.root}
-						clientId={clientId}
-					/>
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<DeleteSessionsButton life={props.lifeTree.root} clientId={clientId} />
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<ShowPromptButton show={props.setShowPrompt} />
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<UndoButton undo={() => props.undoRedo.undo()} />
-					<RedoButton redo={() => props.undoRedo.redo()} />
-				</ButtonGroup>
-			</Floater>
 		</div>
 	);
 }
@@ -174,23 +135,15 @@ export function LifeView(props: {
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
-			props.life.moment.addSession("" + inputValue + " - " + getDateTime());
 			setInputValue("");
+			// ! TODO: try and populate what we have, and have GPTService update it when response comes in
+			GPTService.prompt(inputValue).then((moments) => {
+				moments.forEach((moment) => {
+					props.life.moment.insertAtEnd(moment);
+				});
+			});
 		}
 	};
-	function getDateTime(): string {
-		const now = new Date();
-
-		const options: Intl.DateTimeFormatOptions = {
-			month: "short",
-			day: "numeric",
-			hour: "numeric",
-			minute: "numeric",
-			hour12: true,
-		};
-		const formatter = new Intl.DateTimeFormat("en-US", options);
-		return formatter.format(now);
-	}
 
 	return (
 		<div

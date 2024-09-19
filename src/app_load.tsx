@@ -8,11 +8,11 @@ import { createRoot } from "react-dom/client";
 import { ReactApp } from "./react/ux.js";
 import { appTreeConfiguration, Life2, newAppTreeConfiguration } from "./schema/app_schema.js";
 import { sessionTreeConfiguration } from "./schema/session_schema.js";
-import { createSessionPrompter } from "./utils/gpt_helpers.js";
 import { createUndoRedoStacks } from "./utils/undo.js";
 import { loadFluidData } from "./infra/fluid.js";
 import { containerSchema } from "./schema/container_schema.js";
 import { AccountInfo } from "@azure/msal-browser";
+import { GPTService } from "./services/gptService.js";
 
 export async function loadApp(
 	client: AzureClient | OdspClient,
@@ -44,8 +44,8 @@ export async function loadApp(
 	// Create undo/redo stacks for the app
 	const undoRedo = createUndoRedoStacks(appTree.events);
 
-	// Create an AI prompter for generating sessions
-	let prompter: ReturnType<typeof createSessionPrompter> | undefined;
+	// Initialize GPT Service
+	GPTService.initialize(account);
 
 	// Render the app - note we attach new containers after render so
 	// the app renders instantly on create new flow. The app will be
@@ -58,22 +58,6 @@ export async function loadApp(
 				audience={services.audience}
 				container={container}
 				undoRedo={undoRedo}
-				insertTemplate={async (prompt: string) => {
-					if (prompter === undefined) {
-						try {
-							prompter = createSessionPrompter(account);
-						} catch (e) {
-							console.error("Failed to create AI prompter. Please try again.", e);
-							return;
-						}
-					}
-					const sessions = await prompter(prompt);
-					if (sessions === undefined) {
-						alert("AI failed to generate sessions. Please try again.");
-						return;
-					}
-					appTree.root.moment.insertAtEnd(...sessions);
-				}} // eslint-disable-line @typescript-eslint/no-empty-function
 			/>
 		</DndProvider>,
 	);

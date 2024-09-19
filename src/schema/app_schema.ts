@@ -32,48 +32,50 @@ export class Tag extends sf.object(
 	}
 }
 
-// Define the schema for the Moment object.
-// Helper functions for working with the data contained in this object
-// are included in this class definition as methods.
-export class Moment extends sf.object(
-	"Moment",
-	// Fields for moments which SharedTree will store and synchronize across clients.
-	// These fields are exposed as members of instances of the Moment class.
-	{
-		id: sf.string,
-		title: sf.string,
-		abstract: sf.string,
-		sessionType: sf.string,
-		created: sf.number,
-		lastChanged: sf.number,
-		tags: sf.array("Tags", Tag),
-	},
-) {
-	// Update the title text and also update the timestamp
-	public updateTitle(text: string) {
-		this.lastChanged = new Date().getTime();
-		this.title = text;
-	}
+const MomentType = {
+	session: "Session",
+	workshop: "Workshop",
+	panel: "Panel",
+	keynote: "Keynote",
+};
 
-	// Update the abstract text and also update the timestamp
-	public updateAbstract(text: string) {
-		this.lastChanged = new Date().getTime();
-		this.abstract = text;
-	}
-
-	public updateTags(newTags: string[]) {
-		this.tags.removeRange();
-		newTags.forEach((tagName) => {
-			const newTag = new Tag({ name: tagName });
-			this.tags.insertAtEnd(newTag);
+export class Moment extends sf.object("Moment", {
+	id: sf.identifier,
+	created: sf.number,
+	/** What happened? */
+	description: sf.string,
+	/** Additional details about what happened */
+	additionalNotes: sf.optional(sf.string),
+	storyLineIds: sf.array(sf.string),
+	lastChanged: sf.number,
+}) {
+	public static create(description: string, additionalNotes?: string): Moment {
+		return new Moment({
+			id: uuid(),
+			created: Date.now(),
+			description,
+			additionalNotes,
+			storyLineIds: [],
+			lastChanged: Date.now(),
 		});
+	}
+	public updateDescription(text: string) {
 		this.lastChanged = new Date().getTime();
+		this.description = text;
 	}
 
-	// Update the session type and also update the timestamp
-	public updateSessionType(type: keyof typeof MomentType) {
+	// Update the additional notes & timestamp
+	public updateNotes(text: string) {
 		this.lastChanged = new Date().getTime();
-		this.sessionType = type;
+		this.additionalNotes = text;
+	}
+
+	public updateStoryLineIds(storyLineIds: string[]) {
+		// Clear the list of IDs and insert provided ones
+		this.storyLineIds.removeRange();
+		storyLineIds.forEach((id) => {
+			this.storyLineIds.insertAtEnd(id);
+		});
 	}
 
 	/**
@@ -89,28 +91,20 @@ export class Moment extends sf.object(
 	}
 }
 
-const MomentType = {
-	session: "Session",
-	workshop: "Workshop",
-	panel: "Panel",
-	keynote: "Keynote",
-};
-
 export class Moments extends sf.array("Moments", Moment) {
 	// Add a moment to the life
-	public addSession(title?: string) {
+	public addSession(description?: string) {
 		const currentTime = new Date().getTime();
-		if (title === undefined) {
-			title = "New Session";
+		if (description === undefined) {
+			description = "New Session";
 		}
 		const moment = new Moment({
 			id: uuid(),
-			title,
-			abstract: "Add a description",
-			sessionType: "session",
+			description,
+			additionalNotes: "Add a description",
 			created: currentTime,
 			lastChanged: currentTime,
-			tags: [],
+			storyLineIds: [],
 		});
 		this.insertAtEnd(moment);
 		return moment;
@@ -174,37 +168,9 @@ export const appTreeConfiguration = new TreeViewConfiguration({
 	schema: Life,
 });
 
-export class Moment2 extends sf.object("Moment", {
-	id: sf.identifier,
-	createDate: sf.number,
-	/** What happened? */
-	description: sf.string,
-	/** Additional details about what happened */
-	additionalNotes: sf.optional(sf.string),
-	storyLineIds: sf.array(sf.string),
-}) {
-	public static create(description: string, additionalNotes?: string): Moment2 {
-		return new Moment2({
-			id: uuid(),
-			createDate: Date.now(),
-			description,
-			additionalNotes,
-			storyLineIds: [],
-		});
-	}
-
-	public updateStoryLineIds(storyLineIds: string[]) {
-		// Clear the list of IDs and insert provided ones
-		this.storyLineIds.removeRange();
-		storyLineIds.forEach((id) => {
-			this.storyLineIds.insertAtEnd(id);
-		});
-	}
-}
-
-export class MomentMap extends sf.map("MomentMap", Moment2) {
+export class MomentMap extends sf.map("MomentMap", Moment) {
 	public createMoment(description: string, additionalNotes?: string) {
-		const moment = Moment2.create(description, additionalNotes);
+		const moment = Moment.create(description, additionalNotes);
 		this.set(moment.id, moment);
 	}
 }
@@ -246,7 +212,7 @@ export class Life2 extends sf.object("Life", {
 	 * This method simply creates sample fake data for testing purposes
 	 */
 	public static getSampleData(): InsertableTypedNode<typeof Life2> {
-		const moment = Moment2.create("arrived at Disneyland");
+		const moment = Moment.create("arrived at Disneyland");
 		const storyLine = StoryLine.create("Vacation", [moment.id]);
 		moment.updateStoryLineIds([storyLine.id]);
 		return {

@@ -95,13 +95,12 @@ export function createSessionPrompter(
 			const currentTime = new Date().getTime();
 			const moment: Moment = 
 				new Moment({
-					title: prompt,
-					abstract: `suggested storyline: ${suggestedStoryline}`,
+					description: prompt,
+					additionalNotes: `suggested storyline: ${suggestedStoryline}`,
 					created: currentTime,
-					sessionType: "session",
 					lastChanged: currentTime,
 					id: uuid(),
-					tags: [],
+					storyLineIds: [],
 				});
 			return [moment];
 		} catch (e) {

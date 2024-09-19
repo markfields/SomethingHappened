@@ -9,6 +9,7 @@ import {
 	Tree,
 	TreeNode,
 	TreeArrayNode,
+	InsertableTypedNode,
 } from "fluid-framework";
 import { v4 as uuid } from "uuid";
 
@@ -171,4 +172,91 @@ export class Life extends sf.object("Life", {
 export const appTreeConfiguration = new TreeViewConfiguration({
 	// Schema for the root
 	schema: Life,
+});
+
+export class Moment2 extends sf.object("Moment", {
+	id: sf.string,
+	createDate: sf.number,
+	/** What happened? */
+	description: sf.string,
+	/** Additional details about what happened */
+	additionalNotes: sf.optional(sf.string),
+	storyLineIds: sf.array(sf.string),
+}) {
+	public static create(description: string, additionalNotes?: string): Moment2 {
+		return new Moment2({
+			id: uuid(),
+			createDate: Date.now(),
+			description,
+			additionalNotes,
+			storyLineIds: [],
+		});
+	}
+
+	public updateStoryLineIds(storyLineIds: string[]) {
+		this.description;
+		// Clear the list of IDs and insert provided ones
+		this.storyLineIds.removeRange();
+		storyLineIds.forEach((id) => {
+			this.storyLineIds.insertAtEnd(id);
+		});
+	}
+}
+
+export class MomentMap extends sf.map("MomentMap", Moment2) {
+	public createMoment(description: string, additionalNotes?: string) {
+		const moment = Moment2.create(description, additionalNotes);
+		this.set(moment.id, moment);
+	}
+}
+
+export class StoryLine extends sf.object("StoryLine", {
+	id: sf.string,
+	name: sf.string,
+	momentIds: sf.array(sf.string),
+}) {
+	public static create(name: string, momentIds: string[] = []): StoryLine {
+		return new StoryLine({
+			id: uuid(),
+			name,
+			momentIds,
+		});
+	}
+
+	public updateMomentIds(momentIds: string[]) {
+		// Clear the list of IDs and insert provided ones
+		this.momentIds.removeRange();
+		momentIds.forEach((id) => {
+			this.momentIds.insertAtEnd(id);
+		});
+	}
+}
+
+export class StoryLineMap extends sf.map("StoryLineMap", StoryLine) {
+	public createStoryLine(name: string, momentIds: string[] = []) {
+		const storyLine = StoryLine.create(name, momentIds);
+		this.set(storyLine.id, storyLine);
+	}
+}
+
+export class Life2 extends sf.object("Life", {
+	moments: MomentMap,
+	storyLines: StoryLineMap,
+}) {
+	/**
+	 * This method simply creates sample fake data for testing purposes
+	 */
+	public static getSampleData(): InsertableTypedNode<typeof Life2> {
+		const moment = Moment2.create("arrived at Disneyland");
+		const storyLine = StoryLine.create("Vacation", [moment.id]);
+		moment.updateStoryLineIds([storyLine.id]);
+		return {
+			moments: [[moment.id, moment]],
+			storyLines: [[storyLine.id, storyLine]],
+		};
+	}
+}
+
+export const newAppTreeConfiguration = new TreeViewConfiguration({
+	schema: Life2,
 });

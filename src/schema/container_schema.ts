@@ -10,6 +10,7 @@ import { ContainerSchema, SharedTree } from "fluid-framework";
 // initial DataObjects we want created when the container is first created.
 export const containerSchema = {
 	initialObjects: {
+		newAppData: SharedTree,
 		appData: SharedTree,
 		sessionData: SharedTree,
 	},

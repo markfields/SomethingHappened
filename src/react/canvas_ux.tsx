@@ -135,14 +135,18 @@ export function LifeView(props: {
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
-			const desc = inputValue;
+			const description = inputValue;
 			setInputValue("");
 			// ! TODO: try and populate what we have, and have GPTService update it when response comes in
-			GPTService.prompt(desc).then((moments) => {
-				moments.forEach((moment) => {
-					props.life.moment.insertAtEnd(moment);
+			GPTService.prompt(description)
+				.then((moments) => {
+					moments.forEach((moment) => {
+						props.life.moment.insertAtEnd(moment);
+					});
+				})
+				.catch((e) => {
+					console.error("Unexpected error while prompting GPTService", e);
 				});
-			});
 		}
 	};
 

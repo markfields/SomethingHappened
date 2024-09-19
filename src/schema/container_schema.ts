@@ -12,6 +12,6 @@ export const containerSchema = {
 	initialObjects: {
 		newAppData: SharedTree,
 		appData: SharedTree,
-		sessionData: SharedTree,
+		momentData: SharedTree,
 	},
 } satisfies ContainerSchema;

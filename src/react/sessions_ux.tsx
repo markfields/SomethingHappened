@@ -133,7 +133,7 @@ function SessionsViewContent(props: {
 		sessionsArray.push(
 			<RootSessionWrapper
 				key={s.id}
-				session={s}
+				moment={s}
 				clientId={props.clientId}
 				clientSession={props.clientSession}
 				fluidMembers={props.fluidMembers}

@@ -4,7 +4,14 @@
  */
 
 import React, { Fragment, useEffect, useRef, useState } from "react";
-import { Autocomplete, Box, FilterOptionsState, Paper, TextField, createFilterOptions } from "@mui/material";
+import {
+	Autocomplete,
+	Box,
+	FilterOptionsState,
+	Paper,
+	TextField,
+	createFilterOptions,
+} from "@mui/material";
 import { Life, Moment, Moments } from "../schema/app_schema.js";
 import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
@@ -18,7 +25,7 @@ import { Dialog, Listbox, Transition } from "@headlessui/react";
 import { ShowDetailsButton } from "./button_ux.js";
 
 export function RootSessionWrapper(props: {
-	session: Moment;
+	moment: Moment;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
@@ -26,27 +33,28 @@ export function RootSessionWrapper(props: {
 	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
 	return (
-		<Paper elevation={3}  
+		<Paper
+			elevation={3}
 			sx={{
 				display: "flex",
 				flexDirection: "column",
 				justifyContent: "center",
 				zIndex: 10,
-				backgroundColor: "#ccd5ae", 
+				backgroundColor: "#ccd5ae",
 			}}
 		>
-			<SessionView setIsDetailsShowing={setIsDetailsOpen} {...props} />
+			<MomentView setIsDetailsShowing={setIsDetailsOpen} {...props} />
 			<MomentDetails
 				isOpen={isDetailsOpen}
 				setIsOpen={setIsDetailsOpen}
-				moment={props.session}
+				moment={props.moment}
 			/>
 		</Paper>
 	);
 }
 
-export function SessionView(props: {
-	session: Moment;
+export function MomentView(props: {
+	moment: Moment;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
@@ -58,7 +66,7 @@ export function SessionView(props: {
 	const color = "#fefae0";
 	const selectedColor = "#ccd5ae";
 
-	const parent = Tree.parent(props.session);
+	const parent = Tree.parent(props.moment);
 	if (!Tree.is(parent, Moments)) return <></>;
 	const grandParent = Tree.parent(parent);
 	if (Tree.is(grandParent, Life)) unscheduled = true;
@@ -77,7 +85,7 @@ export function SessionView(props: {
 
 	const test = () => {
 		testRemoteNoteSelection(
-			props.session,
+			props.moment,
 			props.clientSession,
 			props.clientId,
 			setRemoteSelected,
@@ -87,7 +95,7 @@ export function SessionView(props: {
 	};
 
 	const update = (action: selectAction) => {
-		updateRemoteNoteSelection(props.session, action, props.clientSession, props.clientId);
+		updateRemoteNoteSelection(props.moment, action, props.clientSession, props.clientId);
 	};
 
 	// Register for tree deltas when the component mounts.
@@ -127,17 +135,17 @@ export function SessionView(props: {
 
 	useEffect(() => {
 		toggle(true);
-	}, [Tree.parent(props.session)]);
+	}, [Tree.parent(props.moment)]);
 
 	useEffect(() => {
 		if (mounted.current) {
 			toggle(true);
 		}
-	}, [props.session.title, props.session.abstract]);
+	}, [props.moment.description, props.moment.additionalNotes]);
 
 	const [{ isDragging }, drag] = useDrag(() => ({
 		type: dragType.SESSION,
-		item: props.session,
+		item: props.moment,
 		collect: (monitor) => ({
 			isDragging: monitor.isDragging(),
 		}),
@@ -150,13 +158,13 @@ export function SessionView(props: {
 			canDrop: !!monitor.canDrop(),
 		}),
 		canDrop: (item) => {
-			if (Tree.is(item, Moment) && item !== props.session) return true;
+			if (Tree.is(item, Moment) && item !== props.moment) return true;
 			return false;
 		},
 		drop: (item) => {
 			const droppedItem = item;
 			if (Tree.is(droppedItem, Moment) && Tree.is(parent, Moments)) {
-				moveItem(droppedItem, parent.indexOf(props.session), parent);
+				moveItem(droppedItem, parent.indexOf(props.moment), parent);
 			}
 			return;
 		},
@@ -189,36 +197,33 @@ export function SessionView(props: {
 				props.setIsDetailsShowing(true);
 			}}
 			sx={{
-				transition: 'transform 0.2s ease-out',
-				transform: status === 'exiting' ? 'scale(1.1)' : 'none',
+				transition: "transform 0.2s ease-out",
+				transform: status === "exiting" ? "scale(1.1)" : "none",
 			}}
 		>
-			<Box
-				ref={attachRef}
-			>
+			<Box ref={attachRef}>
 				<Paper
 					style={{ opacity: isDragging ? 0.5 : 1 }}
 					sx={{
-						position: 'relative',
-						display: 'flex',
-						flexDirection: 'column',
+						position: "relative",
+						display: "flex",
+						flexDirection: "column",
 						borderRadius: 2,
 						backgroundColor: bgColor,
-						height: 128, 
+						height: 128,
 						padding: 2,
 						opacity: isDragging ? 0.5 : 1,
-						transition: 'box-shadow 0.3s, transform 0.3s',
+						transition: "box-shadow 0.3s, transform 0.3s",
 						boxShadow: isOver && canDrop ? 4 : 1,
-						transform: isOver && canDrop ? hoverMovement : 'none',
+						transform: isOver && canDrop ? hoverMovement : "none",
 					}}
-
 				>
-					<SessionToolbar
-						session={props.session}
+					<MomentToolbar
+						moment={props.moment}
 						setIsDetailsShowing={props.setIsDetailsShowing}
 					/>
-					<SessionTitle session={props.session} update={update} />
-					<SessionTypeLabel session={props.session} />
+					<MomentTitle moment={props.moment} update={update} />
+					{/* <SessionTypeLabel session={props.session} /> */}
 					<RemoteSelection show={remoteSelected} />
 				</Paper>
 			</Box>
@@ -236,8 +241,8 @@ function RemoteSelection(props: { show: boolean }): JSX.Element {
 	}
 }
 
-function SessionTitle(props: {
-	session: Moment;
+function MomentTitle(props: {
+	moment: Moment;
 	update: (value: selectAction) => void;
 }): JSX.Element {
 	// The text field updates the Fluid data model on every keystroke in this demo.
@@ -257,51 +262,22 @@ function SessionTitle(props: {
 	return (
 		<textarea
 			className="p-2 bg-transparent h-full w-full resize-none z-50 focus:outline-none"
-			value={props.session.title}
+			value={props.moment.description}
 			readOnly={true}
 			onClick={(e) => handleClick(e)}
-			onChange={(e) => props.session.updateTitle(e.target.value)}
+			onChange={(e) => props.moment.updateDescription(e.target.value)}
 		/>
 	);
 }
 
-function SessionToolbar(props: {
-	session: Moment;
+function MomentToolbar(props: {
+	moment: Moment;
 	setIsDetailsShowing: (arg: boolean) => void;
 }): JSX.Element {
 	return (
 		<div className="flex justify-between z-50">
 			<DragFilled />
 			<ShowDetailsButton show={props.setIsDetailsShowing} />
-		</div>
-	);
-}
-
-function SessionTypeLabel(props: { session: Moment }): JSX.Element {
-	const sessionType = props.session.sessionType;
-	let color = "";
-	switch (sessionType) {
-		case "keynote":
-			color = "bg-red-500";
-			break;
-		case "panel":
-			color = "bg-blue-500";
-			break;
-		case "session":
-			color = "bg-green-500";
-			break;
-		case "workshop":
-			color = "bg-yellow-500";
-			break;
-		default:
-			color = "bg-gray-500";
-	}
-
-	return (
-		<div
-			className={`absolute -bottom-2 -right-2 h-6 w-6 rounded-full overflow-hidden shadow-md align-bottom hover:shadow-lg text-center font-bold text-white font-mono z-[1000] ${color}`}
-		>
-			{props.session.sessionType.substring(0, 1).toLocaleUpperCase()}
 		</div>
 	);
 }
@@ -323,18 +299,18 @@ export default function MomentDetails(props: {
 				<div>
 					<input
 						className="resize-none border-2 border-gray-500 bg-white mb-2 p-2 text-black w-full h-full"
-						value={props.moment.title}
+						value={props.moment.description}
 						onChange={(e) => {
-							props.moment.updateTitle(e.target.value);
+							props.moment.updateDescription(e.target.value);
 						}}
 					/>
-					<TypeList session={props.moment} />
+					<TypeList moment={props.moment} />
 					<textarea
 						rows={5}
 						className="resize-none border-2 border-gray-500 bg-white mb-2 p-2 text-black w-full h-full"
-						value={props.moment.abstract}
+						value={props.moment.additionalNotes}
 						onChange={(e) => {
-							props.moment.updateAbstract(e.target.value);
+							props.moment.updateNotes(e.target.value);
 						}}
 					/>
 					<div className="flex flex-row gap-4">
@@ -350,7 +326,7 @@ export default function MomentDetails(props: {
 								props.moment.delete(), props.setIsOpen(false);
 							}}
 						>
-							Delete Session
+							Delete Moment
 						</button>
 					</div>
 				</div>
@@ -359,26 +335,10 @@ export default function MomentDetails(props: {
 	);
 }
 
-const sessionTypes = [
-	{ id: 1, name: "Keynote", value: "keynote" },
-	{ id: 2, name: "Panel", value: "panel" },
-	{ id: 3, name: "Session", value: "session" },
-	{ id: 4, name: "Workshop", value: "workshop" },
-];
-
-function TypeList(props: { session: Moment }): JSX.Element {
-	const [selectedSessionType, setSelectedSessionType] = useState(
-		sessionTypes[sessionTypes.findIndex((x) => x.value === props.session.sessionType)],
+function TypeList(props: { moment: Moment }): JSX.Element {
+	const [selectedTags, setSelectedTags] = React.useState<string[]>(
+		props.moment.storyLineIds.map((tag) => tag),
 	);
-
-	// Set the session type to the selected value
-	useEffect(() => {
-		props.session.updateSessionType(
-			selectedSessionType.value as "session" | "keynote" | "panel" | "workshop",
-		);
-	}, [selectedSessionType]);
-
-	const [selectedTags, setSelectedTags] = React.useState<string[]>(props.session.tags.map((tag) => tag.name));
 	const [availableTags, setAvailableTags] = React.useState<string[]>([
 		"Vacation",
 		"Work",
@@ -398,7 +358,7 @@ function TypeList(props: { session: Moment }): JSX.Element {
 			if (lastValue && !availableTags.includes(lastValue)) {
 				setAvailableTags((prev) => [...prev, lastValue]); // Add new tag to available tags
 			}
-			props.session.updateTags(newValue);
+			props.moment.updateStoryLineIds(newValue);
 		}
 	};
 	const filterOptions = (options: string[], params: FilterOptionsState<string>) => {
@@ -438,32 +398,6 @@ function TypeList(props: { session: Moment }): JSX.Element {
 					<TextField {...params} variant="standard" label="Add tags" />
 				)}
 			/>
-
-			<Listbox value={selectedSessionType} onChange={setSelectedSessionType}>
-				<div className="relative mb-2">
-					<Listbox.Button className="relative w-full cursor-pointer resize-none border-2 border-gray-500 bg-white p-2 text-black text-left focus:outline-none">
-						<span className="block truncate">{selectedSessionType.name}</span>
-					</Listbox.Button>
-					<Transition
-						as={Fragment}
-						leave="transition ease-in duration-100"
-						leaveFrom="opacity-100"
-						leaveTo="opacity-0"
-					>
-						<Listbox.Options className="absolute shadow-lg max-h-60 w-full overflow-auto border-2 border-gray-500 bg-white p-2 mt-1 text-black text-left">
-							{sessionTypes.map((sessionTypes) => (
-								<Listbox.Option
-									key={sessionTypes.id}
-									className={"relative cursor-pointer select-none text-black"}
-									value={sessionTypes}
-								>
-									{sessionTypes.name}
-								</Listbox.Option>
-							))}
-						</Listbox.Options>
-					</Transition>
-				</div>
-			</Listbox>
 		</>
 	);
 }

@@ -5,7 +5,7 @@
 
 import React from "react";
 import { Life, Days } from "../schema/app_schema.js";
-import { findSession } from "../utils/app_helpers.js";
+import { findMoment } from "../utils/app_helpers.js";
 import {
 	ThumbLikeFilled,
 	DismissFilled,

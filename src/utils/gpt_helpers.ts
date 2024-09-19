@@ -154,17 +154,20 @@ export function createSessionPrompter(
 				throw new Error("AI did not return result");
 			}
 
-			const suggestions: { title: string; abstract: string; sessionType: string }[] = JSON.parse(result.choices[0].message.content as string);
+			const suggestions: {
+				description: string;
+				additionalNotes: string;
+				sessionType: string;
+			}[] = JSON.parse(result.choices[0].message.content as string);
 			const moments: Moment[] = suggestions.map((s) => {
 				const currentTime = new Date().getTime();
 				return new Moment({
-					title: s.title,
-					abstract: s.abstract + "\n\n" + `(from ${prompt})`,
+					description: s.description,
+					additionalNotes: s.additionalNotes + "\n\n" + `(from ${prompt})`,
 					created: currentTime,
-					sessionType: s.sessionType,
 					lastChanged: currentTime,
 					id: uuid(),
-					tags: [],
+					storyLineIds: [],
 				});
 			});
 			return moments;

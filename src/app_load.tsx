@@ -6,7 +6,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { createRoot } from "react-dom/client";
 import { ReactApp } from "./react/ux.js";
-import { appTreeConfiguration } from "./schema/app_schema.js";
+import { appTreeConfiguration, Life2, newAppTreeConfiguration } from "./schema/app_schema.js";
 import { sessionTreeConfiguration } from "./schema/session_schema.js";
 import { createSessionPrompter } from "./utils/gpt_helpers.js";
 import { createUndoRedoStacks } from "./utils/undo.js";
@@ -25,6 +25,11 @@ export async function loadApp(
 	// Initialize the SharedTree DDSes
 	const sessionTree = container.initialObjects.sessionData.viewWith(sessionTreeConfiguration);
 	if (sessionTree.compatibility.canInitialize) sessionTree.initialize({ clients: [] });
+
+	const newAppTree = container.initialObjects.appData.viewWith(newAppTreeConfiguration);
+	if (newAppTree.compatibility.canInitialize) {
+		newAppTree.initialize(Life2.getSampleData());
+	}
 
 	const appTree = container.initialObjects.appData.viewWith(appTreeConfiguration);
 	if (appTree.compatibility.canInitialize)

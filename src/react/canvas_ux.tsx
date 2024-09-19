@@ -135,9 +135,10 @@ export function LifeView(props: {
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
+			const desc = inputValue;
 			setInputValue("");
 			// ! TODO: try and populate what we have, and have GPTService update it when response comes in
-			GPTService.prompt(inputValue).then((moments) => {
+			GPTService.prompt(desc).then((moments) => {
 				moments.forEach((moment) => {
 					props.life.moment.insertAtEnd(moment);
 				});

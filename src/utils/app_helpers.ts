@@ -32,7 +32,7 @@ export function moveItem(session: Moment, destinationIndex: number, destination:
 	}
 }
 
-export function findSession(life: Life, id: string): Moment | undefined {
+export function findMoment(life: Life, id: string): Moment | undefined {
 	for (const s of life.moment) {
 		if (s.id === id) return s;
 	}

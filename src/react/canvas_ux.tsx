@@ -23,7 +23,7 @@ import { GPTService } from "../services/gptService.js";
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
-	sessionTree: TreeView<typeof ClientSession>;
+	momentTree: TreeView<typeof ClientSession>;
 	audience: IServiceAudience<IMember>;
 	container: IFluidContainer;
 	fluidMembers: IMember[];
@@ -98,7 +98,7 @@ export function Canvas(props: {
 			<LifeView
 				life={props.lifeTree.root}
 				clientId={clientId}
-				clientSession={props.sessionTree.root}
+				clientSession={props.momentTree.root}
 				fluidMembers={props.fluidMembers}
 			/>
 		</div>
@@ -116,7 +116,7 @@ export function LifeView(props: {
 			? props.life.moment.map((session) => (
 					<RootSessionWrapper
 						key={session.id}
-						session={session}
+						moment={session}
 						clientId={props.clientId}
 						clientSession={props.clientSession}
 						fluidMembers={props.fluidMembers}
@@ -204,7 +204,7 @@ function SessionsViewContent(props: {
 			? props.sessions.map((session) => (
 					<RootSessionWrapper
 						key={session.id}
-						session={session}
+						moment={session}
 						clientId={props.clientId}
 						clientSession={props.clientSession}
 						fluidMembers={props.fluidMembers}

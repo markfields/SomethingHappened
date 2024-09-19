@@ -23,8 +23,8 @@ export async function loadApp(
 	const { services, container } = await loadFluidData(containerId, containerSchema, client);
 
 	// Initialize the SharedTree DDSes
-	const sessionTree = container.initialObjects.sessionData.viewWith(sessionTreeConfiguration);
-	if (sessionTree.compatibility.canInitialize) sessionTree.initialize({ clients: [] });
+	const momentTree = container.initialObjects.momentData.viewWith(sessionTreeConfiguration);
+	if (momentTree.compatibility.canInitialize) momentTree.initialize({ clients: [] });
 
 	const newAppTree = container.initialObjects.newAppData.viewWith(newAppTreeConfiguration);
 	if (newAppTree.compatibility.canInitialize) {
@@ -54,7 +54,7 @@ export async function loadApp(
 		<DndProvider backend={HTML5Backend}>
 			<ReactApp
 				lifeTree={appTree}
-				sessionTree={sessionTree}
+				momentTree={momentTree}
 				audience={services.audience}
 				container={container}
 				undoRedo={undoRedo}

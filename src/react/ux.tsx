@@ -15,7 +15,7 @@ import { UserAvatars } from "./avatars_ux.js";
 
 export function ReactApp(props: {
 	lifeTree: TreeView<typeof Life>;
-	sessionTree: TreeView<typeof ClientSession>;
+	momentTree: TreeView<typeof ClientSession>;
 	audience: IServiceAudience<IMember>;
 	container: IFluidContainer;
 	undoRedo: undoRedo;
@@ -46,7 +46,7 @@ export function ReactApp(props: {
 				<div className="flex h-[calc(100vh-48px)] flex-row ">
 					<Canvas
 						lifeTree={props.lifeTree}
-						sessionTree={props.sessionTree}
+						momentTree={props.momentTree}
 						audience={props.audience}
 						container={props.container}
 						fluidMembers={fluidMembers}

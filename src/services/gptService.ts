@@ -54,13 +54,12 @@ export class GPTService {
 
 function populateDefaultMoment(description: string): Moment {
 	return new Moment({
-		title: description,
-		abstract: "suggested storyline: default storyLine",
-		created: Date.now(),
-		sessionType: "session",
-		lastChanged: Date.now(),
 		id: uuid(),
-		tags: [],
+		description,
+		additionalNotes: "suggested storyline: default storyLine",
+		created: Date.now(),
+		lastChanged: Date.now(),
+		storyLineIds: [],
 	});
 }
 
@@ -158,13 +157,12 @@ function createSessionPrompter(
 			const suggestedStoryline = result.choices[0].message.content as string;
 			const currentTime = new Date().getTime();
 			const moment: Moment = new Moment({
-				title: prompt,
-				abstract: `suggested storyline: ${suggestedStoryline}`,
+				description: prompt,
+				additionalNotes: `suggested storyline: ${suggestedStoryline}`,
 				created: currentTime,
-				sessionType: "session",
 				lastChanged: currentTime,
 				id: uuid(),
-				tags: [],
+				storyLineIds: [],
 			});
 			return [moment];
 		} catch (e) {

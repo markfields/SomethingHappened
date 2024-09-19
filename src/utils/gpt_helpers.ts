@@ -69,11 +69,13 @@ export function createSessionPrompter(
 		{ moment: "We met up with Pierre and Yvonne at a cafe in Paris", storyline: "vacation log"},
 		{ moment: "We went to the Louvre this afternoon", storyline: "vacation log"},
 	]);
-	const body: ChatCompletionCreateParamsNonStreaming = {
+
+	//* TODO: Do we need to replay these 3 messages with each prompt, or is there context that's remembered?
+	const bodyBase: ChatCompletionCreateParamsNonStreaming = {
 		messages: [
 			{ role: "system", content: sessionSystemPrompt },
 			{ role: "system", content: samples },
-			{ role: "user", content: "Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples?" },
+			{ role: "user", content: "Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples? Just return the string for the storyline name." },
 		],
 		model: "gpt-4o",
 		n:1,
@@ -82,6 +84,7 @@ export function createSessionPrompter(
 	return async (prompt) => {
 		console.log("Prompting Azure OpenAI with:", prompt);
 		try {
+			const body = {...bodyBase};
 			body.messages.push({ role: "user", content: prompt });
 			const result = await openai.chat.completions.create(body);
 			if (!result.created) {

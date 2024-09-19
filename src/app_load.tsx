@@ -26,7 +26,7 @@ export async function loadApp(
 	const sessionTree = container.initialObjects.sessionData.viewWith(sessionTreeConfiguration);
 	if (sessionTree.compatibility.canInitialize) sessionTree.initialize({ clients: [] });
 
-	const newAppTree = container.initialObjects.appData.viewWith(newAppTreeConfiguration);
+	const newAppTree = container.initialObjects.newAppData.viewWith(newAppTreeConfiguration);
 	if (newAppTree.compatibility.canInitialize) {
 		newAppTree.initialize(Life2.getSampleData());
 	}

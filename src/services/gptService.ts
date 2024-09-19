@@ -4,6 +4,7 @@ import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.m
 import { PublicClientApplication } from "@azure/msal-browser";
 import { Moment } from "../schema/app_schema.js";
 import { getAccessToken, getSessionToken } from "../utils/auth_helpers.js";
+import { sampleData } from "../app_load.js";
 
 export class GPTService {
 	private static _instance: GPTService;
@@ -108,23 +109,10 @@ function createSessionPrompter(
 		apiVersion: "2024-08-01-preview",
 	});
 
-	const samples = JSON.stringify([
-		{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
-		{ moment: "I got a headache", storyline: "food and symptom log" },
-		{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
-		{ moment: "We landed in France!", storyline: "vacation log" },
-		{
-			moment: "We met up with Pierre and Yvonne at a cafe in Paris",
-			storyline: "vacation log",
-		},
-		{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },
-	]);
-
-	//* TODO: Do we need to replay these 3 messages with each prompt, or is there context that's remembered?
 	const bodyBase: ChatCompletionCreateParamsNonStreaming = {
 		messages: [
 			{ role: "system", content: sessionSystemPrompt },
-			{ role: "system", content: samples },
+			{ role: "system", content: JSON.stringify(sampleData) },
 			{
 				role: "user",
 				content:

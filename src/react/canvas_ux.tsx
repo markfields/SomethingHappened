@@ -174,7 +174,7 @@ export function LifeView(props: {
 					variant="standard"
 					value={inputValue}
 					placeholder="What just happened?"
-					style={{ width: "160px" }}
+					style={{ width: "160px", minWidth: "160px" }}
 					InputProps={{
 						disableUnderline: true,
 					}}

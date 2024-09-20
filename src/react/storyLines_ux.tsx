@@ -108,6 +108,7 @@ function StoryLineViewContent(props: {
 			<RootMomentWrapper
 				key={`${props.storyLine.id}-${moment.id}`}
 				moment={moment}
+				storyLine={props.storyLine}
 				clientId={props.clientId}
 				clientSession={props.clientSession}
 				fluidMembers={props.fluidMembers}

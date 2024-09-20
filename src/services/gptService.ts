@@ -81,13 +81,7 @@ async function azureOpenAITokenProvider(msalInstance: PublicClientApplication): 
 	const sessionToken = await getSessionToken(msalInstance);
 
 	// get the token from the token provider
-	const token = await getAccessToken(tokenProvider, false, {
-		headers: {
-			"Content-Type": "application/json",
-			"X-ZUMO-AUTH": sessionToken,
-		},
-	});
-
+	const token = await getAccessToken(tokenProvider, sessionToken);
 	return token;
 }
 

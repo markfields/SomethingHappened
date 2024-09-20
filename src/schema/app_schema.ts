@@ -47,7 +47,7 @@ export class Moment extends sf.object("Moment", {
 		this.storyLineIds.forEach((storyLineId: string) => {
 			const storyLine = storyLines.get(storyLineId);
 			if (storyLine !== undefined) {
-				storyLine.momentIds.removeAt(storyLine.momentIds.indexOf(this.id));
+				storyLine.removeMomentId(this.id);
 			}
 		});
 		// Clear the list of IDs and insert provided ones
@@ -62,13 +62,20 @@ export class Moment extends sf.object("Moment", {
 	}
 
 	/**
-	 * Removes a node from its parent.
+	 * Removes Moment from StoryLine (and potentially altogether)
 	 */
-	public delete() {
+	public delete(storyLine: StoryLine) {
 		const parent = Tree.parent(this);
-		// Use type narrowing to ensure that parent is correct.
 		if (Tree.is(parent, MomentMap)) {
-			parent.delete(this.id);
+			const grandParent = Tree.parent(parent);
+			if (Tree.is(grandParent, Life)) {
+				storyLine.removeMomentId(this.id);
+				this.removeStoryLineId(storyLine.id);
+
+				if (this.storyLineIds.length === 0) {
+					parent.delete(this.id);
+				}
+			}
 		}
 	}
 
@@ -80,6 +87,10 @@ export class Moment extends sf.object("Moment", {
 				return grandParent.storyLines;
 			}
 		}
+	}
+
+	public removeStoryLineId(storyLineId: string) {
+		this.storyLineIds.removeAt(this.storyLineIds.indexOf(storyLineId));
 	}
 }
 
@@ -110,6 +121,10 @@ export class StoryLine extends sf.object("StoryLine", {
 		momentIds.forEach((id) => {
 			this.momentIds.insertAtEnd(id);
 		});
+	}
+
+	public removeMomentId(momentId: string) {
+		this.momentIds.removeAt(this.momentIds.indexOf(momentId));
 	}
 }
 

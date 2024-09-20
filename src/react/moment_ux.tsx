@@ -12,7 +12,7 @@ import {
 	TextField,
 	createFilterOptions,
 } from "@mui/material";
-import { Life, Moment } from "../schema/app_schema.js";
+import { Moment, StoryLine } from "../schema/app_schema.js";
 import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
 import { testRemoteNoteSelection, updateRemoteNoteSelection } from "../utils/session_helpers.js";
@@ -26,6 +26,7 @@ import { ShowDetailsButton } from "./button_ux.js";
 
 export function RootMomentWrapper(props: {
 	moment: Moment;
+	storyLine: StoryLine;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
@@ -48,6 +49,7 @@ export function RootMomentWrapper(props: {
 				isOpen={isDetailsOpen}
 				setIsOpen={setIsDetailsOpen}
 				moment={props.moment}
+				storyLine={props.storyLine}
 			/>
 		</Paper>
 	);
@@ -286,6 +288,7 @@ export default function MomentDetails(props: {
 	isOpen: boolean;
 	setIsOpen: (arg: boolean) => void;
 	moment: Moment;
+	storyLine: StoryLine;
 }): JSX.Element {
 	const buttonClass = "text-white font-bold py-2 px-4 rounded";
 	return (
@@ -323,7 +326,7 @@ export default function MomentDetails(props: {
 						<button
 							className={`bg-red-500 hover:bg-red-800 ${buttonClass}`}
 							onClick={() => {
-								props.moment.delete(), props.setIsOpen(false);
+								props.moment.delete(props.storyLine), props.setIsOpen(false);
 							}}
 						>
 							Delete Moment

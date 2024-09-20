@@ -101,27 +101,22 @@ function StoryLineViewContent(props: {
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 }): JSX.Element {
-	const momentArray = [];
-	for (const momentId of props.storyLine.momentIds) {
-		const moment = props.moments.get(momentId);
-		if (moment === undefined) {
-			console.error("Moment could not be found");
-			return <></>;
-		}
-		momentArray.push(
+	const momentArray = props.storyLine.momentIds.map((id) => props.moments.get(id)!);
+	const momentContentArray = [...momentArray]
+		.sort((a, b) => a.created - b.created)
+		.map((moment) => (
 			<RootMomentWrapper
-				key={moment.id}
+				key={`${props.storyLine.id}-${moment.id}`}
 				moment={moment}
 				clientId={props.clientId}
 				clientSession={props.clientSession}
 				fluidMembers={props.fluidMembers}
-			/>,
-		);
-	}
+			/>
+		));
 
 	return (
 		<>
-			<div className="flex overflow-auto gap-4 p-4 content-start">{momentArray}</div>
+			<div className="flex overflow-auto gap-4 p-4 content-start">{momentContentArray}</div>
 		</>
 	);
 }

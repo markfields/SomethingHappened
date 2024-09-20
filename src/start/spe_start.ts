@@ -1,14 +1,14 @@
 import { AccountInfo, AuthenticationResult, PublicClientApplication } from "@azure/msal-browser";
-import { authHelper } from "../infra/spe/authHelper.js";
 import { showErrorMessage } from "./error_ux.js";
 import { OdspClient } from "@fluidframework/odsp-client/beta";
 import { GraphHelper } from "../infra/spe/graphHelper.js";
 import { getClientProps } from "../infra/spe/speClientProps.js";
 import { SampleOdspTokenProvider } from "../infra/spe/speTokenProvider.js";
 import { loadApp } from "../app_load.js";
+import { getMsalInstance } from "../utils/auth_helpers.js";
 
 export async function speStart() {
-	const msalInstance = await authHelper();
+	const msalInstance = await getMsalInstance();
 
 	// Handle the login redirect flows
 	msalInstance
@@ -115,7 +115,7 @@ async function signedInSpeStart(msalInstance: PublicClientApplication, account: 
 	const client = new OdspClient(clientProps);
 
 	// Load the app
-	const container = await loadApp(client, containerId, account);
+	const container = await loadApp(client, containerId, msalInstance);
 
 	// If the app is in a `createNew` state - no containerId, and the container is detached, we attach the container.
 	// This uploads the container to the service and connects to the collaboration session.

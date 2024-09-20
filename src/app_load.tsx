@@ -11,13 +11,13 @@ import { sessionTreeConfiguration } from "./schema/session_schema.js";
 import { createUndoRedoStacks } from "./utils/undo.js";
 import { loadFluidData } from "./infra/fluid.js";
 import { containerSchema } from "./schema/container_schema.js";
-import { AccountInfo } from "@azure/msal-browser";
+import { PublicClientApplication } from "@azure/msal-browser";
 import { GPTService } from "./services/gptService.js";
 
 export async function loadApp(
 	client: AzureClient | OdspClient,
 	containerId: string,
-	account: AccountInfo,
+	msalInstance: PublicClientApplication,
 ): Promise<IFluidContainer> {
 	// Initialize Fluid Container
 	const { services, container } = await loadFluidData(containerId, containerSchema, client);
@@ -45,7 +45,7 @@ export async function loadApp(
 	const undoRedo = createUndoRedoStacks(appTree.events);
 
 	// Initialize GPT Service
-	GPTService.initialize(account);
+	GPTService.initialize(msalInstance);
 
 	// Render the app - note we attach new containers after render so
 	// the app renders instantly on create new flow. The app will be

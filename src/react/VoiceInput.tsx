@@ -4,10 +4,24 @@ import { IconButton } from "@mui/material";
 import { MicOff, MicOutlined } from "@mui/icons-material";
 //@ts-ignore
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
+import { getDateTime } from "./canvas_ux.js";
+//@ts-ignore
+import createSpeechServicesPonyfill from "web-speech-cognitive-services";
+
+const SUBSCRIPTION_KEY = process.env.AZURE_SPEECH_KEY;
+const REGION = `westus`;
+
+const { SpeechRecognition: AzureSpeechRecognition } = createSpeechServicesPonyfill({
+	credentials: {
+		region: REGION,
+		subscriptionKey: SUBSCRIPTION_KEY,
+	},
+});
+SpeechRecognition.applyPolyfill(AzureSpeechRecognition);
 
 export function VoiceInput(props: {
 	life: Life;
-	handleMicClick: (momentDescription: string) => void;
+	handleMicClick: (prompt: string) => void;
 	setIsOpen?: (arg: boolean) => void;
 }): JSX.Element {
 	const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } =
@@ -21,17 +35,20 @@ export function VoiceInput(props: {
 	const handleMicClick = () => {
 		if (isListening) {
 			console.log("Stopping Mic");
-			SpeechRecognition.stopListening();
+			SpeechRecognition.abortListening();
 			console.log("transcript: " + transcript);
 
-			props.handleMicClick(transcript);
+			props.handleMicClick(transcript + " - " + getDateTime());
 			resetTranscript();
 			if (props.setIsOpen) {
 				props.setIsOpen(false);
 			}
 		} else {
 			console.log("Starting Mic");
-			SpeechRecognition.startListening();
+			SpeechRecognition.startListening({
+				continuous: true,
+				language: "en-US",
+			});
 		}
 		setIsListening(!isListening);
 	};

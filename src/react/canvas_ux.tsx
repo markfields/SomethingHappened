@@ -21,6 +21,20 @@ import { TextField } from "@mui/material";
 import { VoiceInput } from "./VoiceInput.js";
 import { GPTService, IGPTPromptResponse } from "../services/gptService.js";
 
+export function getDateTime(): string {
+	const now = new Date();
+
+	const options: Intl.DateTimeFormatOptions = {
+		month: "short",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+		hour12: true,
+	};
+	const formatter = new Intl.DateTimeFormat("en-US", options);
+	return formatter.format(now);
+}
+
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
 	momentTree: TreeView<typeof ClientSession>;
@@ -165,7 +179,7 @@ export function LifeView(props: {
 					variant="standard"
 					value={inputValue}
 					placeholder="What just happened?"
-					style={{ width: "160px", minWidth: "160px" }}
+					style={{ width: "160px" }}
 					InputProps={{
 						disableUnderline: true,
 					}}

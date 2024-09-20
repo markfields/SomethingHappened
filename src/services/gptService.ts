@@ -66,7 +66,8 @@ function populateDefaultMoment(description: string): Moment {
 
 const sessionSystemPrompt = `You are a service named Copilot that takes a user prompt of something that just happened in their life (a "moment"), and categorizes
 it based on existing "storylines" of "moments" they have recorded.
-I will provide you with sample storylines of moments, and you will suggest which storyline is the best fit for the user's moment, provided in the prompt.
+I will provide you with existing moments and storylines, and you will suggest which storyline is the best fit for the user's new moment, provided in the prompt.
+If none of the existing storylines seem to fit, please suggest a new one.
 `;
 
 async function azureOpenAITokenProvider(msalInstance: PublicClientApplication): Promise<string> {
@@ -116,11 +117,28 @@ function createSessionPrompter(
 			{
 				role: "user",
 				content:
-					"Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples? Just return the string for the storyline name.",
+					"Here's what just happened. Can you suggest which storyline this likely belongs to?",
 			},
 		],
 		model: "gpt-4o",
 		n: 1,
+		response_format: {
+			type: "json_schema",
+			json_schema: ({
+				name: "suggestion_storyline",
+				description: "The suggested storyline for the user's moment. Best if it matches one of the existing storylines, but if not, suggest a new one.",
+				schema: {
+					type: "object", 
+					properties: {
+						storyline: { type: "string" },
+						existing: { type: "boolean" }
+					},
+					required: ["storyline", "existing"],
+					additionalProperties: false,
+		},
+				strict: true,
+			}),
+		},
 	};
 
 	return async (prompt) => {
@@ -133,15 +151,16 @@ function createSessionPrompter(
 				throw new Error("AI did not return result");
 			}
 
-			const suggestedStoryline = result.choices[0].message.content as string;
+			const resultJson = result.choices[0].message.content as string;
+			const { storyline, existing }= JSON.parse(resultJson);
 			const currentTime = new Date().getTime();
 			const moment: Moment = new Moment({
 				description: prompt,
-				additionalNotes: `suggested storyline: ${suggestedStoryline}`,
+				additionalNotes: `suggested storyline: "${storyline}" (${existing ? "existing" : "new"})`,
 				created: currentTime,
 				lastChanged: currentTime,
 				id: uuid(),
-				storyLineIds: [],
+				storyLineIds: [storyline],
 			});
 			return [moment];
 		} catch (e) {

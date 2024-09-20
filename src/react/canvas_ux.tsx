@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import "./styles.css";
-import { Life } from "../schema/app_schema.js";
+import { Life, MomentMap, StoryLineMap } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";
 import {
 	ConnectionState,
@@ -15,13 +15,11 @@ import {
 	Tree,
 	TreeView,
 } from "fluid-framework";
-import { RootSessionWrapper } from "./session_ux.js";
-import { Moments } from "../schema/app_schema.js";
 import { undoRedo } from "../utils/undo.js";
-import { SessionsView } from "./sessions_ux.js";
+import { StoryLineView } from "./storyLines_ux.js";
 import { TextField } from "@mui/material";
 import { VoiceInput } from "./VoiceInput.js";
-import { GPTService } from "../services/gptService.js";
+import { GPTService, IGPTPromptResponse } from "../services/gptService.js";
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
@@ -113,19 +111,6 @@ export function LifeView(props: {
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 }): JSX.Element {
-	const momentArray =
-		props.life.moment.length > 0
-			? props.life.moment.map((session) => (
-					<RootSessionWrapper
-						key={session.id}
-						moment={session}
-						clientId={props.clientId}
-						clientSession={props.clientSession}
-						fluidMembers={props.fluidMembers}
-					/>
-			  ))
-			: null;
-
 	const [inputValue, setInputValue] = useState<string>("");
 	const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -139,10 +124,12 @@ export function LifeView(props: {
 		// ! TODO: try and populate what we have, and have GPTService update it when response comes in
 		// ! TODO: add support for local service when not connected to GPT API
 		GPTService.prompt(momentDescription)
-			.then((moments) => {
-				moments.forEach((moment) => {
-					props.life.moment.insertAtEnd(moment);
-				});
+			.then((response: IGPTPromptResponse) => {
+				const storyLine = props.life.storyLines.createAndGetStoryLine(
+					response.storyLine.name,
+					response.storyLine.isExisting,
+				);
+				props.life.createAndAddMoment(response.momentDescription, storyLine);
 			})
 			.catch((e) => {
 				console.error("Unexpected error while prompting GPTService", e);
@@ -168,7 +155,11 @@ export function LifeView(props: {
 				justifyContent: "space-between",
 			}}
 		>
-			<MomentsViewContent sessions={props.life.moment} {...props} />
+			<StoryLinesViewContent
+				storyLines={props.life.storyLines}
+				moments={props.life.moments}
+				{...props}
+			/>
 			<div className="responsive-div">
 				<TextField
 					variant="standard"
@@ -188,42 +179,20 @@ export function LifeView(props: {
 	);
 }
 
-// React component that renders each day in the Life side by side
-export function DaysView(props: {
-	life: Life;
+function StoryLinesViewContent(props: {
+	storyLines: StoryLineMap;
+	moments: MomentMap;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 }): JSX.Element {
-	const dayArray = [];
-	for (const day of props.life.days) {
-		dayArray.push(
-			<SessionsView
-				key={Tree.key(day)}
-				sessions={day}
-				clientSession={props.clientSession}
-				clientId={props.clientId}
-				fluidMembers={props.fluidMembers}
-				title={"Day " + ((Tree.key(day) as number) + 1)}
-			/>,
-		);
-	}
-
-	return <>{dayArray}</>;
-}
-
-function MomentsViewContent(props: {
-	sessions: Moments;
-	clientId: string;
-	clientSession: ClientSession;
-	fluidMembers: IMember[];
-}): JSX.Element {
-	const sessionsArray =
-		props.sessions.length > 0
-			? props.sessions.map((session) => (
-					<RootSessionWrapper
-						key={session.id}
-						moment={session}
+	const storyLinesArray =
+		props.storyLines.size > 0
+			? [...props.storyLines.values()].map((storyLine) => (
+					<StoryLineView
+						key={storyLine.id}
+						storyLine={storyLine}
+						moments={props.moments}
 						clientId={props.clientId}
 						clientSession={props.clientSession}
 						fluidMembers={props.fluidMembers}
@@ -231,24 +200,16 @@ function MomentsViewContent(props: {
 			  ))
 			: null;
 
-	const parent = Tree.parent(props.sessions);
-
-	if (Tree.is(parent, Life)) {
-		return (
-			<>
-				<div
-					className={`flex ${
-						sessionsArray ? "flex-wrap" : "hidden"
-					} w-full gap-4 p-4 content-start`}
-					style={sessionsArray ? {} : { flex: "none" }}
-				>
-					{sessionsArray}
-				</div>
-			</>
-		);
-	} else {
-		return (
-			<div className="flex flex-col flex-nowrap gap-4 p-4 content-start">{sessionsArray}</div>
-		);
-	}
+	return (
+		<>
+			<div
+				className={`flex ${
+					storyLinesArray ? "flex-wrap" : "hidden"
+				} w-full gap-4 p-4 content-start`}
+				style={storyLinesArray ? {} : { flex: "none" }}
+			>
+				{storyLinesArray}
+			</div>
+		</>
+	);
 }

@@ -1,10 +1,8 @@
-import { v4 as uuid } from "uuid";
 import { AzureOpenAI } from "openai";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
 import { PublicClientApplication } from "@azure/msal-browser";
-import { Moment } from "../schema/app_schema.js";
+import { sampleData } from "../schema/app_schema.js";
 import { getAccessToken, getSessionToken } from "../utils/auth_helpers.js";
-import { sampleData } from "../app_load.js";
 
 export class GPTService {
 	private static _instance: GPTService;
@@ -22,7 +20,7 @@ export class GPTService {
 		this._instance = new GPTService(msalInstance);
 	}
 
-	private gptPrompter: ReturnType<typeof createSessionPrompter> | undefined;
+	private gptPrompter: ReturnType<typeof createStoryLinePrompter> | undefined;
 	private constructor(private readonly msalInstance: PublicClientApplication) {
 		this.createPrompterIfNeeded();
 	}
@@ -30,41 +28,40 @@ export class GPTService {
 	private createPrompterIfNeeded() {
 		if (this.gptPrompter === undefined) {
 			try {
-				this.gptPrompter = createSessionPrompter(this.msalInstance);
+				this.gptPrompter = createStoryLinePrompter(this.msalInstance);
 			} catch (e) {
 				console.error("Failed to create AI prompter. Please try again.", e);
 			}
 		}
 	}
 
-	public static async prompt(momentDescription: string): Promise<Moment[]> {
+	public static async prompt(momentDescription: string): Promise<IGPTPromptResponse> {
 		const instance = GPTService.instance;
 		instance.createPrompterIfNeeded();
 
-		let moments: Moment[] | undefined;
+		let response: IGPTPromptResponse | undefined;
 		if (instance.gptPrompter !== undefined) {
-			moments = await instance.gptPrompter(momentDescription);
-			if (moments === undefined) {
+			response = await instance.gptPrompter(momentDescription);
+			if (response === undefined) {
 				alert("AI failed to generate sessions. Please try again.");
 			}
 		}
 
-		return moments ?? [populateDefaultMoment(momentDescription)];
+		return response ?? createDefaultPromptResponse(momentDescription);
 	}
 }
 
-function populateDefaultMoment(description: string): Moment {
-	return new Moment({
-		id: uuid(),
-		description,
-		additionalNotes: "suggested storyline: default storyLine",
-		created: Date.now(),
-		lastChanged: Date.now(),
-		storyLineIds: [],
-	});
+function createDefaultPromptResponse(description: string): IGPTPromptResponse {
+	return {
+		momentDescription: description,
+		storyLine: {
+			name: "Unsorted moments",
+			isExisting: false,
+		},
+	};
 }
 
-const sessionSystemPrompt = `You are a service named Copilot that takes a user prompt of something that just happened in their life (a "moment"), and categorizes
+const storyLineSystemPrompt = `You are a service named Copilot that takes a user prompt of something that just happened in their life (a "moment"), and categorizes
 it based on existing "storylines" of "moments" they have recorded.
 I will provide you with existing moments and storylines, and you will suggest which storyline is the best fit for the user's new moment, provided in the prompt.
 If none of the existing storylines seem to fit, please suggest a new one.
@@ -85,9 +82,17 @@ async function azureOpenAITokenProvider(msalInstance: PublicClientApplication): 
 	return token;
 }
 
-function createSessionPrompter(
+export interface IGPTPromptResponse {
+	momentDescription: string;
+	storyLine: {
+		name: string;
+		isExisting: boolean;
+	};
+}
+
+function createStoryLinePrompter(
 	msalInstance: PublicClientApplication,
-): (prompt: string) => Promise<Moment[] | undefined> {
+): (prompt: string) => Promise<IGPTPromptResponse | undefined> {
 	console.log("Creating Azure OpenAI prompter");
 
 	const endpoint =
@@ -106,7 +111,7 @@ function createSessionPrompter(
 
 	const bodyBase: ChatCompletionCreateParamsNonStreaming = {
 		messages: [
-			{ role: "system", content: sessionSystemPrompt },
+			{ role: "system", content: storyLineSystemPrompt },
 			{ role: "system", content: JSON.stringify(sampleData) },
 			{
 				role: "user",
@@ -148,18 +153,13 @@ function createSessionPrompter(
 
 			const resultJson = result.choices[0].message.content as string;
 			const { storyline, existing } = JSON.parse(resultJson);
-			const currentTime = new Date().getTime();
-			const moment: Moment = new Moment({
-				description: prompt,
-				additionalNotes: `suggested storyline: "${storyline}" (${
-					existing ? "existing" : "new"
-				})`,
-				created: currentTime,
-				lastChanged: currentTime,
-				id: uuid(),
-				storyLineIds: [storyline],
-			});
-			return [moment];
+			return {
+				momentDescription: prompt,
+				storyLine: {
+					name: storyline,
+					isExisting: existing,
+				},
+			};
 		} catch (e) {
 			return undefined;
 		}

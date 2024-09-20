@@ -54,7 +54,7 @@ export function VoiceInput(props: {
 	};
 
 	return (
-		<div style={{ position: "absolute", right: 0, bottom: 0 }}>
+		<div style={{ paddingLeft: "20px" }}>
 			<IconButton onClick={handleMicClick}>
 				{isListening ? <MicOff /> : <MicOutlined />}
 			</IconButton>

@@ -196,7 +196,7 @@ export function LifeView(props: {
 					onChange={(e) => setInputValue(e.target.value)}
 					onKeyDown={(e) => handleKeyDown(e)}
 				/>
-				<VoiceInput life={props.life} handleMicClick={props.insertTemplate} />
+				<VoiceInput life={props.life} handleMicClick={addMoment} />
 			</div>
 		</div>
 	);

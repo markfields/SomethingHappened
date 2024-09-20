@@ -56,10 +56,6 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 		}
 
 		const config: AxiosRequestConfig = {
-			headers: {
-				"Content-Type": "application/json",
-				"X-ZUMO-AUTH": this.sessionToken,
-			},
 			params: {
 				tenantId,
 				documentId,
@@ -69,7 +65,7 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 			},
 		};
 
-		const token = await getAccessToken(this.azFunctionUrl, false, config);
+		const token = await getAccessToken(this.azFunctionUrl, this.sessionToken, config);
 		return token;
 	}
 }

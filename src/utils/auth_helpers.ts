@@ -1,8 +1,9 @@
 import { AccountInfo, AuthenticationResult, PublicClientApplication } from "@azure/msal-browser";
 import axios, { AxiosRequestConfig } from "axios";
+import { jwtDecode } from "jwt-decode";
 
 export async function login(msalInstance: PublicClientApplication): Promise<void> {
-	msalInstance
+	await msalInstance
 		.handleRedirectPromise()
 		.then((tokenResponse: AuthenticationResult | null) => {
 			// If the tokenResponse is not null, then the user is signed in
@@ -28,17 +29,21 @@ export async function login(msalInstance: PublicClientApplication): Promise<void
 			}
 		})
 		.catch((error: Error) => {
-			console.log("Error in handleRedirectPromise: " + error.message);
+			console.error("Error in handleRedirectPromise: " + error.message);
 		});
 }
 
 // force refresh of AAD tokens
 export async function refresh(msalInstance: PublicClientApplication): Promise<void> {
-	if (msalInstance.getAllAccounts().length === 0) {
-		login(msalInstance);
+	// If there are no signed-in accounts, attempt to sign in a user
+	if (msalInstance.getActiveAccount() === null) {
+		await login(msalInstance);
 	}
 
-	msalInstance.setActiveAccount(await getAccount(msalInstance));
+	if (msalInstance.getActiveAccount() === null) {
+		console.error("No active account found after login");
+		return;
+	}
 
 	await msalInstance.acquireTokenSilent({
 		scopes: [
@@ -51,11 +56,13 @@ export async function refresh(msalInstance: PublicClientApplication): Promise<vo
 }
 
 export async function getAccount(msalInstance: PublicClientApplication): Promise<AccountInfo> {
+	// Get the signed-in accounts
 	const currentAccounts = msalInstance.getAllAccounts();
+	// If there are no signed-in accounts, attempt to sign a user in
 	if (currentAccounts.length === 0) {
-		console.error("No accounts found trying to login");
 		login(msalInstance);
 	}
+	// If there is one account, return it or just return the first one
 	return msalInstance.getActiveAccount() ?? currentAccounts[0];
 }
 
@@ -63,8 +70,21 @@ export async function getSessionToken(
 	msalInstance: PublicClientApplication,
 	noRetry?: boolean,
 ): Promise<string> {
-	const account = await getAccount(msalInstance);
+	// Check if the session token is in the session storage
+	// If it is, check if it is expired
+	// If it is not expired, return the session token
+	const sessionToken = sessionStorage.getItem("sessionToken");
+	if (sessionToken) {
+		const decodedToken = jwtDecode(sessionToken);
+		if (decodedToken.exp) {
+			const expiryDate = new Date(decodedToken.exp * 1000);
+			if (expiryDate > new Date()) {
+				return sessionToken;
+			}
+		}
+	}
 
+	const account = await getAccount(msalInstance);
 	const response = await axios
 		.post(process.env.TOKEN_PROVIDER_URL + "/.auth/login/aad", {
 			access_token: account.idToken,
@@ -73,7 +93,7 @@ export async function getSessionToken(
 			if (error.response && error.response.status === 401 && !noRetry) {
 				// refresh token and retry
 				await refresh(msalInstance);
-				return getSessionToken(msalInstance, true);
+				return await getSessionToken(msalInstance, true);
 			} else {
 				throw new Error("Failed to get session token");
 			}
@@ -84,7 +104,6 @@ export async function getSessionToken(
 	}
 
 	sessionStorage.setItem("sessionToken", response.data.authenticationToken);
-
 	return response.data.authenticationToken;
 }
 
@@ -116,11 +135,15 @@ export async function getMsalInstance(): Promise<PublicClientApplication> {
 // Call axios to get a token from the token provider
 export async function getAccessToken(
 	url: string,
-	noRetry?: boolean,
-	config?: AxiosRequestConfig,
+	sessionToken: string,
+	config: AxiosRequestConfig = {},
 ): Promise<string> {
-	const response = await axios.get(url, config);
+	config.headers = {
+		"Content-Type": "application/json",
+		"X-ZUMO-AUTH": sessionToken,
+	};
 
+	const response = await axios.get(url, config);
 	if (response.status !== 200) {
 		throw new Error("Failed to get access token");
 	}

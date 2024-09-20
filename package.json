@@ -43,6 +43,7 @@
 		"fluid-framework": "^2.4.0-294316",
 		"hashids": "^2.2.10",
 		"jsrsasign": "^11.1.0",
+		"jwt-decode": "^4.0.0",
 		"openai": "^4.61.1",
 		"react": "^18.2.0",
 		"react-dnd": "^16.0.1",

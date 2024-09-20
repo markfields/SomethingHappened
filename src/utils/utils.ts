@@ -6,7 +6,7 @@
 export const undefinedUserId = "[UNDEFINED]";
 
 export enum dragType {
-	SESSION = "Session",
+	MOMENT = "Moment",
 }
 
 export enum selectAction {

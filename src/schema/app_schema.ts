@@ -12,19 +12,6 @@ import { v4 as uuid } from "uuid";
 // Include a UUID to guarantee that this schema will be uniquely identifiable.
 const sf = new SchemaFactory("a7245fab-24f7-489d-a726-4ff3ee793719");
 
-export class Tag extends sf.object(
-	"Tag",
-	// Fields for tags
-	{
-		name: sf.string,
-	},
-) {
-	// Update the name of the tag
-	public updateName(name: string) {
-		this.name = name;
-	}
-}
-
 export class Moment extends sf.object("Moment", {
 	id: sf.identifier,
 	created: sf.number,
@@ -35,13 +22,12 @@ export class Moment extends sf.object("Moment", {
 	storyLineIds: sf.array(sf.string),
 	lastChanged: sf.number,
 }) {
-	public static create(description: string, additionalNotes?: string): Moment {
+	public static create(description: string, storyLineIds: string[] = []): Moment {
 		return new Moment({
 			id: uuid(),
 			created: Date.now(),
 			description,
-			additionalNotes,
-			storyLineIds: [],
+			storyLineIds,
 			lastChanged: Date.now(),
 		});
 	}
@@ -70,94 +56,17 @@ export class Moment extends sf.object("Moment", {
 	public delete() {
 		const parent = Tree.parent(this);
 		// Use type narrowing to ensure that parent is correct.
-		if (Tree.is(parent, Moments)) {
-			const index = parent.indexOf(this);
-			parent.removeAt(index);
+		if (Tree.is(parent, MomentMap)) {
+			parent.delete(this.id);
 		}
 	}
 }
-
-export class Moments extends sf.array("Moments", Moment) {
-	// Add a moment to the life
-	public addMoment(description?: string, storyline?: string) {
-		const currentTime = new Date().getTime();
-		if (description === undefined) {
-			description = "New Session";
-		}
-		const moment = new Moment({
-			id: uuid(),
-			description,
-			additionalNotes: "Add a description",
-			created: currentTime,
-			lastChanged: currentTime,
-			storyLineIds: storyline ? [storyline] : [],
-		});
-		this.insertAtEnd(moment);
-		return moment;
-	}
-}
-
-export class Days extends sf.array("Days", Moments) {
-	// Add a day to the Life
-	public addDay(): Moments {
-		const day = new Moments([]);
-		this.insertAtEnd(day);
-		return day;
-	}
-
-	// Remove the last day from the Life
-	public removeDay() {
-		if (this.length === 0) {
-			return;
-		}
-		// Get the life object from the parent of this map
-		const life = Tree.parent(this);
-		// Get the sessions array from the life object
-		// and move all the sessions in the Day to the sessions array
-		if (Tree.is(life, Life)) {
-			const sessions = life?.moment;
-			const lastDay = this[this.length - 1];
-			if (lastDay) {
-				Tree.runTransaction<Days>(this, () => {
-					// Move all the sessions in the Day to the sessions array
-					if (lastDay.length !== 0) {
-						const index = sessions.length;
-						sessions.moveRangeToIndex(index, 0, lastDay.length, lastDay);
-					}
-					// Remove the day from the Life
-					this.removeAt(this.length - 1);
-				});
-			}
-		}
-	}
-}
-
-export class Life extends sf.object("Life", {
-	name: sf.string,
-	moment: Moments,
-	days: Days,
-	sessionsPerDay: sf.number,
-}) {
-	// Clear all the moments from the life
-	public clear() {
-		Tree.runTransaction<Life>(this, () => {
-			if (this.moment.length > 0) this.moment.removeRange();
-			if (this.days.length > 0) this.days.removeRange();
-		});
-	}
-}
-
-// Export the tree config appropriate for this schema.
-// This is passed into the SharedTree when it is initialized.
-export const appTreeConfiguration = new TreeViewConfiguration({
-	// Schema for the root
-	schema: Life,
-});
 
 export class MomentMap extends sf.map("MomentMap", Moment) {
-	public createMoment(description: string, additionalNotes?: string) {
-		const moment = Moment.create(description, additionalNotes);
+	public createMoment(description: string, storyLineIds: string[] = []): Moment {
+		const moment = Moment.create(description, storyLineIds);
 		this.set(moment.id, moment);
+		return moment;
 	}
 }
 
@@ -188,26 +97,78 @@ export class StoryLineMap extends sf.map("StoryLineMap", StoryLine) {
 		const storyLine = StoryLine.create(name, momentIds);
 		this.set(storyLine.id, storyLine);
 	}
+
+	private getStoryLineFromName(name: string): StoryLine | undefined {
+		return [...this.values()].find((storyLine) => storyLine.name === name);
+	}
+
+	public createAndGetStoryLine(name: string, isExisting: boolean): StoryLine {
+		if (!isExisting || this.getStoryLineFromName(name) === undefined) {
+			this.createStoryLine(name);
+		}
+
+		return this.getStoryLineFromName(name)!;
+	}
 }
 
-export class Life2 extends sf.object("Life", {
+export class Life extends sf.object("Life", {
 	moments: MomentMap,
 	storyLines: StoryLineMap,
 }) {
+	public createAndAddMoment(momentDescription: string, storyLine: StoryLine) {
+		const moment = this.moments.createMoment(momentDescription, [storyLine.id]);
+		storyLine.momentIds.insertAtEnd(moment.id);
+	}
+
 	/**
 	 * This method simply creates sample fake data for testing purposes
 	 */
-	public static getSampleData(): InsertableTypedNode<typeof Life2> {
-		const moment = Moment.create("arrived at Disneyland");
-		const storyLine = StoryLine.create("Vacation", [moment.id]);
-		moment.updateStoryLineIds([storyLine.id]);
+	public static getSampleData(): InsertableTypedNode<typeof Life> {
+		// const moments: [string, Moment][] = [];
+		const moments = new Map<string, Moment>();
+		// const storyLines: [string, StoryLine][] = [];
+		const storyLines = new Map<string, StoryLine>();
+
+		/**
+		 * This map allows us to not value search the storyLines map for every sample moment
+		 * Key: storyLine name
+		 * Value: storyLine ID
+		 */
+		const storyLineIdMap = new Map<string, string>();
+
+		sampleData.forEach((item) => {
+			if (!storyLineIdMap.has(item.storyline)) {
+				const storyLine = StoryLine.create(item.storyline);
+				storyLineIdMap.set(item.storyline, storyLine.id);
+				storyLines.set(storyLine.id, storyLine);
+			}
+			const storyLine = storyLines.get(storyLineIdMap.get(item.storyline)!)!;
+			const moment = Moment.create(item.moment);
+			moments.set(moment.id, moment);
+
+			storyLine.momentIds.insertAtEnd(moment.id);
+			moment.storyLineIds.insertAtEnd(storyLine.id);
+		});
+
 		return {
-			moments: [[moment.id, moment]],
-			storyLines: [[storyLine.id, storyLine]],
+			moments: moments.entries(),
+			storyLines: storyLines.entries(),
 		};
 	}
 }
 
-export const newAppTreeConfiguration = new TreeViewConfiguration({
-	schema: Life2,
+export const sampleData = [
+	{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
+	{ moment: "I got a headache", storyline: "food and symptom log" },
+	{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
+	{ moment: "We landed in France!", storyline: "vacation log" },
+	{
+		moment: "We met up with Pierre and Yvonne at a cafe in Paris",
+		storyline: "vacation log",
+	},
+	{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },
+];
+
+export const appTreeConfiguration = new TreeViewConfiguration({
+	schema: Life,
 });

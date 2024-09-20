@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import React, { Fragment, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Autocomplete,
 	Box,
@@ -12,7 +12,7 @@ import {
 	TextField,
 	createFilterOptions,
 } from "@mui/material";
-import { Life, Moment, Moments } from "../schema/app_schema.js";
+import { Life, Moment } from "../schema/app_schema.js";
 import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
 import { testRemoteNoteSelection, updateRemoteNoteSelection } from "../utils/session_helpers.js";
@@ -21,10 +21,10 @@ import { useTransition } from "react-transition-state";
 import { IMember, Tree } from "fluid-framework";
 import { ClientSession } from "../schema/session_schema.js";
 import { DragFilled } from "@fluentui/react-icons";
-import { Dialog, Listbox, Transition } from "@headlessui/react";
+import { Dialog } from "@headlessui/react";
 import { ShowDetailsButton } from "./button_ux.js";
 
-export function RootSessionWrapper(props: {
+export function RootMomentWrapper(props: {
 	moment: Moment;
 	clientId: string;
 	clientSession: ClientSession;
@@ -67,9 +67,9 @@ export function MomentView(props: {
 	const selectedColor = "#ccd5ae";
 
 	const parent = Tree.parent(props.moment);
-	if (!Tree.is(parent, Moments)) return <></>;
-	const grandParent = Tree.parent(parent);
-	if (Tree.is(grandParent, Life)) unscheduled = true;
+	// if (!Tree.is(parent, Moments)) return <></>;
+	// const grandParent = Tree.parent(parent);
+	// if (Tree.is(grandParent, Life)) unscheduled = true;
 
 	const [{ status }, toggle] = useTransition({
 		timeout: 1000,
@@ -144,7 +144,7 @@ export function MomentView(props: {
 	}, [props.moment.description, props.moment.additionalNotes]);
 
 	const [{ isDragging }, drag] = useDrag(() => ({
-		type: dragType.SESSION,
+		type: dragType.MOMENT,
 		item: props.moment,
 		collect: (monitor) => ({
 			isDragging: monitor.isDragging(),
@@ -152,7 +152,7 @@ export function MomentView(props: {
 	}));
 
 	const [{ isOver, canDrop }, drop] = useDrop(() => ({
-		accept: [dragType.SESSION],
+		accept: [dragType.MOMENT],
 		collect: (monitor) => ({
 			isOver: !!monitor.isOver(),
 			canDrop: !!monitor.canDrop(),
@@ -163,9 +163,9 @@ export function MomentView(props: {
 		},
 		drop: (item) => {
 			const droppedItem = item;
-			if (Tree.is(droppedItem, Moment) && Tree.is(parent, Moments)) {
-				moveItem(droppedItem, parent.indexOf(props.moment), parent);
-			}
+			// if (Tree.is(droppedItem, Moment) && Tree.is(parent, Moments)) {
+			// 	moveItem(droppedItem, parent.indexOf(props.moment), parent);
+			// }
 			return;
 		},
 	}));
@@ -211,6 +211,7 @@ export function MomentView(props: {
 						borderRadius: 2,
 						backgroundColor: bgColor,
 						height: 128,
+						width: 230,
 						padding: 2,
 						opacity: isDragging ? 0.5 : 1,
 						transition: "box-shadow 0.3s, transform 0.3s",
@@ -223,7 +224,6 @@ export function MomentView(props: {
 						setIsDetailsShowing={props.setIsDetailsShowing}
 					/>
 					<MomentTitle moment={props.moment} update={update} />
-					{/* <SessionTypeLabel session={props.session} /> */}
 					<RemoteSelection show={remoteSelected} />
 				</Paper>
 			</Box>

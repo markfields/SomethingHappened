@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Life } from "../schema/app_schema.js";
 import { IconButton } from "@mui/material";
-import { MicOff, MicOutlined} from '@mui/icons-material';
+import { MicOff, MicOutlined } from "@mui/icons-material";
 //@ts-ignore
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
-import { getDateTime } from "./canvas_ux.js";
 
-export function VoiceInput(props: {life: Life, handleMicClick: (prompt: string) => void, setIsOpen?: (arg: boolean) => void; }): JSX.Element {
+export function VoiceInput(props: {
+	life: Life;
+	handleMicClick: (momentDescription: string) => void;
+	setIsOpen?: (arg: boolean) => void;
+}): JSX.Element {
 	const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } =
 		useSpeechRecognition();
 	const [isListening, setIsListening] = useState(listening);
@@ -20,10 +23,10 @@ export function VoiceInput(props: {life: Life, handleMicClick: (prompt: string) 
 			console.log("Stopping Mic");
 			SpeechRecognition.stopListening();
 			console.log("transcript: " + transcript);
-            
-			props.handleMicClick(transcript + " - " + getDateTime());
+
+			props.handleMicClick(transcript);
 			resetTranscript();
-			if(props.setIsOpen){
+			if (props.setIsOpen) {
 				props.setIsOpen(false);
 			}
 		} else {
@@ -34,7 +37,7 @@ export function VoiceInput(props: {life: Life, handleMicClick: (prompt: string) 
 	};
 
 	return (
-		<div style={{position:'absolute', right:0, bottom: 0}}>
+		<div style={{ position: "absolute", right: 0, bottom: 0 }}>
 			<IconButton onClick={handleMicClick}>
 				{isListening ? <MicOff /> : <MicOutlined />}
 			</IconButton>

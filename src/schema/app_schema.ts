@@ -3,14 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import {
-	TreeViewConfiguration,
-	SchemaFactory,
-	Tree,
-	TreeNode,
-	TreeArrayNode,
-	InsertableTypedNode,
-} from "fluid-framework";
+import { TreeViewConfiguration, SchemaFactory, Tree, InsertableTypedNode } from "fluid-framework";
 import { v4 as uuid } from "uuid";
 
 // Schema is defined using a factory object that generates classes for objects as well
@@ -31,13 +24,6 @@ export class Tag extends sf.object(
 		this.name = name;
 	}
 }
-
-const MomentType = {
-	session: "Session",
-	workshop: "Workshop",
-	panel: "Panel",
-	keynote: "Keynote",
-};
 
 export class Moment extends sf.object("Moment", {
 	id: sf.identifier,
@@ -93,7 +79,7 @@ export class Moment extends sf.object("Moment", {
 
 export class Moments extends sf.array("Moments", Moment) {
 	// Add a moment to the life
-	public addMoment(description?: string) {
+	public addMoment(description?: string, storyline?: string) {
 		const currentTime = new Date().getTime();
 		if (description === undefined) {
 			description = "New Session";
@@ -104,7 +90,7 @@ export class Moments extends sf.array("Moments", Moment) {
 			additionalNotes: "Add a description",
 			created: currentTime,
 			lastChanged: currentTime,
-			storyLineIds: [],
+			storyLineIds: storyline ? [storyline] : [],
 		});
 		this.insertAtEnd(moment);
 		return moment;

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import './styles.css';
+import "./styles.css";
 import { Life } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";
 import {
@@ -16,38 +16,12 @@ import {
 	TreeView,
 } from "fluid-framework";
 import { RootSessionWrapper } from "./session_ux.js";
-import {
-	Floater,
-	NewDayButton,
-	NewMomentButton,
-	ButtonGroup,
-	UndoButton,
-	RedoButton,
-	DeleteDayButton,
-	ShowPromptButton,
-	Divider,
-	DeleteSessionsButton,
-} from "./button_ux.js";
 import { Moments } from "../schema/app_schema.js";
 import { undoRedo } from "../utils/undo.js";
 import { SessionsView } from "./sessions_ux.js";
 import { TextField } from "@mui/material";
 import { VoiceInput } from "./VoiceInput.js";
-
-
-export function getDateTime(): string {
-	const now = new Date();
-
-	const options: Intl.DateTimeFormatOptions = {
-		month: "short",
-		day: "numeric",
-		hour: "numeric",
-		minute: "numeric",
-		hour12: true,
-	};
-	const formatter = new Intl.DateTimeFormat("en-US", options);
-	return formatter.format(now);
-}
+import { GPTService } from "../services/gptService.js";
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
@@ -62,7 +36,6 @@ export function Canvas(props: {
 	setSaved: (arg: boolean) => void;
 	setFluidMembers: (arg: IMember[]) => void;
 	setShowPrompt: (arg: boolean) => void;
-	insertTemplate: (prompt: string) => Promise<void>;
 }): JSX.Element {
 	const [invalidations, setInvalidations] = useState(0);
 
@@ -129,36 +102,7 @@ export function Canvas(props: {
 				clientId={clientId}
 				clientSession={props.momentTree.root}
 				fluidMembers={props.fluidMembers}
-				insertTemplate={props.insertTemplate}
 			/>
-			<Floater>
-				<ButtonGroup>
-					<NewMomentButton life={props.lifeTree.root} clientId={clientId} />
-					<NewDayButton
-						days={props.lifeTree.root.days}
-						session={props.momentTree.root}
-						clientId={clientId}
-					/>
-					<DeleteDayButton
-						days={props.lifeTree.root.days}
-						session={props.momentTree.root}
-						clientId={clientId}
-					/>
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<DeleteSessionsButton life={props.lifeTree.root} clientId={clientId} />
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<ShowPromptButton show={props.setShowPrompt} />
-				</ButtonGroup>
-				<Divider />
-				<ButtonGroup>
-					<UndoButton undo={() => props.undoRedo.undo()} />
-					<RedoButton redo={() => props.undoRedo.redo()} />
-				</ButtonGroup>
-			</Floater>
 		</div>
 	);
 }
@@ -168,7 +112,6 @@ export function LifeView(props: {
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
-	insertTemplate: (prompt: string) => Promise<void>;
 }): JSX.Element {
 	const momentArray =
 		props.life.moment.length > 0
@@ -192,31 +135,54 @@ export function LifeView(props: {
 		}
 	}, []);
 
+	function addMoment(momentDescription: string) {
+		// ! TODO: try and populate what we have, and have GPTService update it when response comes in
+		// ! TODO: add support for local service when not connected to GPT API
+		GPTService.prompt(momentDescription)
+			.then((moments) => {
+				moments.forEach((moment) => {
+					props.life.moment.insertAtEnd(moment);
+				});
+			})
+			.catch((e) => {
+				console.error("Unexpected error while prompting GPTService", e);
+			});
+	}
+
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
-			props.insertTemplate("" + inputValue + " - " + getDateTime());
+			const description = inputValue;
 			setInputValue("");
+			addMoment(description);
 		}
 	};
 
 	return (
-		<div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>
+		<div
+			style={{
+				height: "100%",
+				width: "100%",
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				justifyContent: "space-between",
+			}}
+		>
 			<MomentsViewContent sessions={props.life.moment} {...props} />
 			<div className="responsive-div">
-				
-			<TextField
-				variant="standard"
-				value={inputValue}
-				placeholder="What just happened?"
-				style={{ width: "160px" }}
-				InputProps={{
-					disableUnderline: true,
-				}}
-				inputRef={inputRef}
-				onChange={(e) => setInputValue(e.target.value)}
-				onKeyDown={(e) => handleKeyDown(e)}
-			/>
-			<VoiceInput life={props.life} handleMicClick={props.insertTemplate} />
+				<TextField
+					variant="standard"
+					value={inputValue}
+					placeholder="What just happened?"
+					style={{ width: "160px" }}
+					InputProps={{
+						disableUnderline: true,
+					}}
+					inputRef={inputRef}
+					onChange={(e) => setInputValue(e.target.value)}
+					onKeyDown={(e) => handleKeyDown(e)}
+				/>
+				<VoiceInput life={props.life} handleMicClick={addMoment} />
 			</div>
 		</div>
 	);

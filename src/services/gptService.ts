@@ -118,20 +118,21 @@ function createSessionPrompter(
 		n: 1,
 		response_format: {
 			type: "json_schema",
-			json_schema: ({
+			json_schema: {
 				name: "suggestion_storyline",
-				description: "The suggested storyline for the user's moment. Best if it matches one of the existing storylines, but if not, suggest a new one.",
+				description:
+					"The suggested storyline for the user's moment. Best if it matches one of the existing storylines, but if not, suggest a new one.",
 				schema: {
-					type: "object", 
+					type: "object",
 					properties: {
 						storyline: { type: "string" },
-						existing: { type: "boolean" }
+						existing: { type: "boolean" },
 					},
 					required: ["storyline", "existing"],
 					additionalProperties: false,
-		},
+				},
 				strict: true,
-			}),
+			},
 		},
 	};
 
@@ -146,11 +147,13 @@ function createSessionPrompter(
 			}
 
 			const resultJson = result.choices[0].message.content as string;
-			const { storyline, existing }= JSON.parse(resultJson);
+			const { storyline, existing } = JSON.parse(resultJson);
 			const currentTime = new Date().getTime();
 			const moment: Moment = new Moment({
 				description: prompt,
-				additionalNotes: `suggested storyline: "${storyline}" (${existing ? "existing" : "new"})`,
+				additionalNotes: `suggested storyline: "${storyline}" (${
+					existing ? "existing" : "new"
+				})`,
 				created: currentTime,
 				lastChanged: currentTime,
 				id: uuid(),

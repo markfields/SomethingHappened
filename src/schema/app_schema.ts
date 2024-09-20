@@ -3,12 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import {
-	TreeViewConfiguration,
-	SchemaFactory,
-	Tree,
-	InsertableTypedNode,
-} from "fluid-framework";
+import { TreeViewConfiguration, SchemaFactory, Tree, InsertableTypedNode } from "fluid-framework";
 import { v4 as uuid } from "uuid";
 
 // Schema is defined using a factory object that generates classes for objects as well

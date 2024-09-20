@@ -6,7 +6,12 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { createRoot } from "react-dom/client";
 import { ReactApp } from "./react/ux.js";
-import { appTreeConfiguration, Life2, Moments, newAppTreeConfiguration } from "./schema/app_schema.js";
+import {
+	appTreeConfiguration,
+	Life2,
+	Moments,
+	newAppTreeConfiguration,
+} from "./schema/app_schema.js";
 import { sessionTreeConfiguration } from "./schema/session_schema.js";
 import { createUndoRedoStacks } from "./utils/undo.js";
 import { loadFluidData } from "./infra/fluid.js";

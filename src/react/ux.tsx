@@ -4,6 +4,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import "regenerator-runtime/runtime";
 import React, { useEffect, useState } from "react";
 import { Life } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";

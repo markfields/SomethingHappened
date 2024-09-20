@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import "./styles.css";
 import { Life } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";
 import {
@@ -19,6 +20,7 @@ import { Moments } from "../schema/app_schema.js";
 import { undoRedo } from "../utils/undo.js";
 import { SessionsView } from "./sessions_ux.js";
 import { TextField } from "@mui/material";
+import { VoiceInput } from "./VoiceInput.js";
 import { GPTService } from "../services/gptService.js";
 
 export function Canvas(props: {
@@ -111,7 +113,7 @@ export function LifeView(props: {
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 }): JSX.Element {
-	const sessionArray =
+	const momentArray =
 		props.life.moment.length > 0
 			? props.life.moment.map((session) => (
 					<RootSessionWrapper
@@ -133,42 +135,55 @@ export function LifeView(props: {
 		}
 	}, []);
 
+	function addMoment(momentDescription: string) {
+		// ! TODO: try and populate what we have, and have GPTService update it when response comes in
+		// ! TODO: add support for local service when not connected to GPT API
+		GPTService.prompt(momentDescription)
+			.then((moments) => {
+				moments.forEach((moment) => {
+					props.life.moment.insertAtEnd(moment);
+				});
+			})
+			.catch((e) => {
+				console.error("Unexpected error while prompting GPTService", e);
+			});
+	}
+
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
 			const description = inputValue;
 			setInputValue("");
-			// ! TODO: try and populate what we have, and have GPTService update it when response comes in
-			GPTService.prompt(description)
-				.then((moments) => {
-					moments.forEach((moment) => {
-						props.life.moment.insertAtEnd(moment);
-					});
-				})
-				.catch((e) => {
-					console.error("Unexpected error while prompting GPTService", e);
-				});
+			addMoment(description);
 		}
 	};
 
 	return (
 		<div
-			className={`h-full w-full flex flex-col ${
-				sessionArray ? "items-center" : "items-center justify-center"
-			} ${sessionArray ? "justify-between" : ""}`}
+			style={{
+				height: "100%",
+				width: "100%",
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				justifyContent: "space-between",
+			}}
 		>
-			<SessionsViewContent sessions={props.life.moment} {...props} />
-			<TextField
-				variant="standard"
-				value={inputValue}
-				placeholder="What just happened?"
-				style={{ width: "160px", position: "fixed", bottom: "150px" }}
-				InputProps={{
-					disableUnderline: true,
-				}}
-				inputRef={inputRef}
-				onChange={(e) => setInputValue(e.target.value)}
-				onKeyDown={(e) => handleKeyDown(e)}
-			/>
+			<MomentsViewContent sessions={props.life.moment} {...props} />
+			<div className="responsive-div">
+				<TextField
+					variant="standard"
+					value={inputValue}
+					placeholder="What just happened?"
+					style={{ width: "160px", minWidth: "160px" }}
+					InputProps={{
+						disableUnderline: true,
+					}}
+					inputRef={inputRef}
+					onChange={(e) => setInputValue(e.target.value)}
+					onKeyDown={(e) => handleKeyDown(e)}
+				/>
+				<VoiceInput life={props.life} handleMicClick={addMoment} />
+			</div>
 		</div>
 	);
 }
@@ -197,7 +212,7 @@ export function DaysView(props: {
 	return <>{dayArray}</>;
 }
 
-function SessionsViewContent(props: {
+function MomentsViewContent(props: {
 	sessions: Moments;
 	clientId: string;
 	clientSession: ClientSession;

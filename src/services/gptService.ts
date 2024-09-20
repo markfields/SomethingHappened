@@ -1,9 +1,9 @@
 import { v4 as uuid } from "uuid";
 import { AzureOpenAI } from "openai";
-import axios from "axios";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
-import { AccountInfo } from "@azure/msal-browser";
+import { PublicClientApplication } from "@azure/msal-browser";
 import { Moment } from "../schema/app_schema.js";
+import { getAccessToken, getSessionToken } from "../utils/auth_helpers.js";
 
 export class GPTService {
 	private static _instance: GPTService;
@@ -14,22 +14,22 @@ export class GPTService {
 		return GPTService._instance;
 	}
 
-	public static initialize(account: AccountInfo) {
+	public static initialize(msalInstance: PublicClientApplication) {
 		if (GPTService._instance !== undefined) {
 			throw new Error("Only allowed to initialize GPTService once");
 		}
-		this._instance = new GPTService(account);
+		this._instance = new GPTService(msalInstance);
 	}
 
 	private gptPrompter: ReturnType<typeof createSessionPrompter> | undefined;
-	private constructor(private readonly account: AccountInfo) {
+	private constructor(private readonly msalInstance: PublicClientApplication) {
 		this.createPrompterIfNeeded();
 	}
 
 	private createPrompterIfNeeded() {
 		if (this.gptPrompter === undefined) {
 			try {
-				this.gptPrompter = createSessionPrompter(this.account);
+				this.gptPrompter = createSessionPrompter(this.msalInstance);
 			} catch (e) {
 				console.error("Failed to create AI prompter. Please try again.", e);
 			}
@@ -68,7 +68,7 @@ it based on existing "storylines" of "moments" they have recorded.
 I will provide you with sample storylines of moments, and you will suggest which storyline is the best fit for the user's moment, provided in the prompt.
 `;
 
-async function azureOpenAITokenProvider(account: AccountInfo): Promise<string> {
+async function azureOpenAITokenProvider(msalInstance: PublicClientApplication): Promise<string> {
 	const tokenProvider = process.env.TOKEN_PROVIDER_URL + "/api/getopenaitoken";
 	if (tokenProvider === undefined || tokenProvider === null) {
 		throw Error(
@@ -76,30 +76,21 @@ async function azureOpenAITokenProvider(account: AccountInfo): Promise<string> {
 		);
 	}
 
-	const functionTokenResponse = await axios.post(
-		process.env.TOKEN_PROVIDER_URL + "/.auth/login/aad",
-		{
-			access_token: account.idToken,
-		},
-	);
-
-	if (functionTokenResponse.status !== 200) {
-		throw new Error("Failed to get function token");
-	}
-	const functionToken = functionTokenResponse.data.authenticationToken;
+	const sessionToken = await getSessionToken(msalInstance);
 
 	// get the token from the token provider
-	const response = await axios.get(tokenProvider, {
+	const token = await getAccessToken(tokenProvider, false, {
 		headers: {
 			"Content-Type": "application/json",
-			"X-ZUMO-AUTH": functionToken,
+			"X-ZUMO-AUTH": sessionToken,
 		},
 	});
-	return response.data as string;
+
+	return token;
 }
 
 function createSessionPrompter(
-	account: AccountInfo,
+	msalInstance: PublicClientApplication,
 ): (prompt: string) => Promise<Moment[] | undefined> {
 	console.log("Creating Azure OpenAI prompter");
 
@@ -113,7 +104,7 @@ function createSessionPrompter(
 	}
 
 	const openai = new AzureOpenAI({
-		azureADTokenProvider: () => azureOpenAITokenProvider(account),
+		azureADTokenProvider: () => azureOpenAITokenProvider(msalInstance),
 		apiVersion: "2024-08-01-preview",
 	});
 

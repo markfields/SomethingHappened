@@ -6,11 +6,11 @@
 import { AzureMember, ITokenProvider, ITokenResponse, IUser } from "@fluidframework/azure-client";
 import { ITokenClaims } from "@fluidframework/azure-client/legacy";
 import { ScopeType } from "@fluidframework/protocol-definitions";
-import axios, { AxiosRequestConfig } from "axios";
+import { AxiosRequestConfig } from "axios";
 import { KJUR as jsrsasign } from "jsrsasign";
 import { v4 as uuid } from "uuid";
 import { uniqueNamesGenerator, names } from "unique-names-generator";
-import { AccountInfo } from "@azure/msal-browser";
+import { getAccessToken } from "../../utils/auth_helpers.js";
 
 /**
  * Insecure user definition.
@@ -35,84 +35,42 @@ export class AzureFunctionTokenProvider implements ITokenProvider {
 	constructor(
 		private readonly azFunctionUrl: string,
 		private readonly user?: Pick<AzureMember, "name" | "id" | "additionalDetails">,
-		private readonly account?: AccountInfo,
+		private sessionToken?: string,
 	) {}
-
-	private functionToken?: string;
-
-	private async setFunctionToken() {
-		if (!this.account) {
-			throw new Error("Account is required for acquiring function token");
-		}
-		if (!this.functionToken) {
-			const functionTokenResponse = await axios.post(
-				process.env.TOKEN_PROVIDER_URL + "/.auth/login/aad",
-				{
-					access_token: this.account.idToken,
-				},
-			);
-
-			if (functionTokenResponse.status !== 200) {
-				throw new Error("Failed to get function token");
-			}
-			this.functionToken = functionTokenResponse.data.authenticationToken;
-		}
-	}
 
 	public async fetchOrdererToken(tenantId: string, documentId?: string): Promise<ITokenResponse> {
 		return {
-			jwt: await this.getAfrToken(tenantId, documentId, this.account),
+			jwt: await this.getAfrToken(tenantId, documentId),
 		};
 	}
 
 	public async fetchStorageToken(tenantId: string, documentId: string): Promise<ITokenResponse> {
 		return {
-			jwt: await this.getAfrToken(tenantId, documentId, this.account),
+			jwt: await this.getAfrToken(tenantId, documentId),
 		};
 	}
 
-	private async getAfrToken(
-		tenantId: string,
-		documentId: string | undefined,
-		account?: AccountInfo,
-	): Promise<string> {
-		if (!account) {
-			throw new Error("Account is required for acquiring AFR token");
+	private async getAfrToken(tenantId: string, documentId: string | undefined): Promise<string> {
+		if (!this.sessionToken) {
+			throw new Error("sessionToken is required for acquiring AFR token");
 		}
 
-		if (!this.functionToken) {
-			await this.setFunctionToken();
-		}
+		const config: AxiosRequestConfig = {
+			headers: {
+				"Content-Type": "application/json",
+				"X-ZUMO-AUTH": this.sessionToken,
+			},
+			params: {
+				tenantId,
+				documentId,
+				userName: this.user?.name,
+				userId: this.user?.id,
+				additionalDetails: this.user?.additionalDetails,
+			},
+		};
 
-		let config: AxiosRequestConfig;
-		if (!account) {
-			config = {
-				params: {
-					tenantId,
-					documentId,
-					userName: this.user?.name,
-					userId: this.user?.id,
-					additionalDetails: this.user?.additionalDetails,
-				},
-			};
-		} else {
-			config = {
-				headers: {
-					"Content-Type": "application/json",
-					"X-ZUMO-AUTH": this.functionToken,
-				},
-				params: {
-					tenantId,
-					documentId,
-					userName: this.user?.name,
-					userId: this.user?.id,
-					additionalDetails: this.user?.additionalDetails,
-				},
-			};
-		}
-
-		const response = await axios.get(this.azFunctionUrl, config);
-		return response.data as string;
+		const token = await getAccessToken(this.azFunctionUrl, false, config);
+		return token;
 	}
 }
 

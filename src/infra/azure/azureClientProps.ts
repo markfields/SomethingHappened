@@ -10,8 +10,9 @@ import {
 	AzureLocalConnectionConfig,
 } from "@fluidframework/azure-client";
 import { InsecureTokenProvider } from "./azureTokenProvider.js";
-import { AzureFunctionTokenProvider, azureUser, user } from "./azureTokenProvider.js";
-import { AccountInfo } from "@azure/msal-browser";
+import { AzureFunctionTokenProvider } from "./azureTokenProvider.js";
+import { PublicClientApplication } from "@azure/msal-browser";
+import { getAccount, getSessionToken } from "../../utils/auth_helpers.js";
 
 const client = process.env.FLUID_CLIENT;
 const local = client === undefined || client === "local";
@@ -19,37 +20,30 @@ if (local) {
 	console.warn(`Configured to use local tinylicious.`);
 }
 
-const remoteConnectionConfig: AzureRemoteConnectionConfig = {
-	type: "remote",
-	tenantId: process.env.AZURE_TENANT_ID!,
-	tokenProvider: new AzureFunctionTokenProvider(
-		process.env.TOKEN_PROVIDER_URL! + "/api/getAfrToken",
-		azureUser,
-	),
-	endpoint: process.env.AZURE_ORDERER!,
-};
+export async function getClientProps(
+	msalInstance: PublicClientApplication,
+): Promise<AzureClientProps> {
+	const account = await getAccount(msalInstance);
 
-const localConnectionConfig: AzureLocalConnectionConfig = {
-	type: "local",
-	tokenProvider: new InsecureTokenProvider("VALUE_NOT_USED", user),
-	endpoint: "http://localhost:7070",
-};
+	if (!account) {
+		throw new Error("No account found. Refreshing the page will fix this.");
+	}
 
-const connectionConfig: AzureRemoteConnectionConfig | AzureLocalConnectionConfig = !local
-	? remoteConnectionConfig
-	: localConnectionConfig;
-export const clientProps: AzureClientProps = {
-	connection: connectionConfig,
-};
+	const user = {
+		name: account.name ?? account.username,
+		id: account.localAccountId,
+		additionalDetails: { email: account.username },
+	};
 
-export function getClientProps(account: AccountInfo): AzureClientProps {
+	const sessionToken = await getSessionToken(msalInstance, false);
+
 	const remoteConnectionConfig: AzureRemoteConnectionConfig = {
 		type: "remote",
 		tenantId: process.env.AZURE_TENANT_ID!,
 		tokenProvider: new AzureFunctionTokenProvider(
 			process.env.TOKEN_PROVIDER_URL! + "/api/getAfrToken",
-			azureUser,
-			account,
+			user,
+			sessionToken,
 		),
 		endpoint: process.env.AZURE_ORDERER!,
 	};

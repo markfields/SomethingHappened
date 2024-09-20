@@ -42,11 +42,22 @@ export class Moment extends sf.object("Moment", {
 		this.additionalNotes = text;
 	}
 
-	public updateStoryLineIds(storyLineIds: string[]) {
+	public updateStoryLineIds(newStoryLineIds: string[], storyLines: StoryLineMap) {
+		// Remove momentId from old storyLines
+		this.storyLineIds.forEach((storyLineId: string) => {
+			const storyLine = storyLines.get(storyLineId);
+			if (storyLine !== undefined) {
+				storyLine.momentIds.removeAt(storyLine.momentIds.indexOf(this.id));
+			}
+		});
 		// Clear the list of IDs and insert provided ones
 		this.storyLineIds.removeRange();
-		storyLineIds.forEach((id) => {
-			this.storyLineIds.insertAtEnd(id);
+		newStoryLineIds.forEach((storyLineId) => {
+			this.storyLineIds.insertAtEnd(storyLineId);
+			const storyLine = storyLines.get(storyLineId);
+			if (storyLine !== undefined) {
+				storyLine.momentIds.insertAtEnd(this.id);
+			}
 		});
 	}
 
@@ -58,6 +69,16 @@ export class Moment extends sf.object("Moment", {
 		// Use type narrowing to ensure that parent is correct.
 		if (Tree.is(parent, MomentMap)) {
 			parent.delete(this.id);
+		}
+	}
+
+	public getAllStoryLines(): StoryLineMap | undefined {
+		const parent = Tree.parent(this);
+		if (Tree.is(parent, MomentMap)) {
+			const grandParent = Tree.parent(parent);
+			if (Tree.is(grandParent, Life)) {
+				return grandParent.storyLines;
+			}
 		}
 	}
 }
@@ -93,9 +114,10 @@ export class StoryLine extends sf.object("StoryLine", {
 }
 
 export class StoryLineMap extends sf.map("StoryLineMap", StoryLine) {
-	public createStoryLine(name: string, momentIds: string[] = []) {
+	public createStoryLine(name: string, momentIds: string[] = []): StoryLine {
 		const storyLine = StoryLine.create(name, momentIds);
 		this.set(storyLine.id, storyLine);
+		return storyLine;
 	}
 
 	private getStoryLineFromName(name: string): StoryLine | undefined {

@@ -43,7 +43,7 @@ export class GPTService {
 		if (instance.gptPrompter !== undefined) {
 			response = await instance.gptPrompter(momentDescription);
 			if (response === undefined) {
-				alert("AI failed to generate sessions. Please try again.");
+				console.error("AI failed to find story lines.");
 			}
 		}
 

@@ -6,13 +6,25 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { createRoot } from "react-dom/client";
 import { ReactApp } from "./react/ux.js";
-import { appTreeConfiguration, Life2, newAppTreeConfiguration } from "./schema/app_schema.js";
+import { appTreeConfiguration, Life2, Moments, newAppTreeConfiguration } from "./schema/app_schema.js";
 import { sessionTreeConfiguration } from "./schema/session_schema.js";
 import { createUndoRedoStacks } from "./utils/undo.js";
 import { loadFluidData } from "./infra/fluid.js";
 import { containerSchema } from "./schema/container_schema.js";
 import { PublicClientApplication } from "@azure/msal-browser";
 import { GPTService } from "./services/gptService.js";
+
+export const sampleData = [
+	{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
+	{ moment: "I got a headache", storyline: "food and symptom log" },
+	{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
+	{ moment: "We landed in France!", storyline: "vacation log" },
+	{
+		moment: "We met up with Pierre and Yvonne at a cafe in Paris",
+		storyline: "vacation log",
+	},
+	{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },
+];
 
 export async function loadApp(
 	client: AzureClient | OdspClient,
@@ -32,8 +44,11 @@ export async function loadApp(
 	}
 
 	const appTree = container.initialObjects.appData.viewWith(appTreeConfiguration);
-	if (appTree.compatibility.canInitialize)
-		appTree.initialize({ name: "Life", moment: [], days: [], sessionsPerDay: 4 });
+	if (appTree.compatibility.canInitialize) {
+		const sampleMoments: Moments = new Moments([]);
+		sampleData.forEach(({ moment, storyline }) => sampleMoments.addMoment(moment, storyline));
+		appTree.initialize({ name: "Life", moment: sampleMoments, days: [], sessionsPerDay: 4 });
+	}
 
 	// create the root element for React
 	const app = document.createElement("div");

@@ -4,6 +4,7 @@ import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.m
 import { PublicClientApplication } from "@azure/msal-browser";
 import { Moment } from "../schema/app_schema.js";
 import { getAccessToken, getSessionToken } from "../utils/auth_helpers.js";
+import { sampleData } from "../app_load.js";
 
 export class GPTService {
 	private static _instance: GPTService;
@@ -65,7 +66,8 @@ function populateDefaultMoment(description: string): Moment {
 
 const sessionSystemPrompt = `You are a service named Copilot that takes a user prompt of something that just happened in their life (a "moment"), and categorizes
 it based on existing "storylines" of "moments" they have recorded.
-I will provide you with sample storylines of moments, and you will suggest which storyline is the best fit for the user's moment, provided in the prompt.
+I will provide you with existing moments and storylines, and you will suggest which storyline is the best fit for the user's new moment, provided in the prompt.
+If none of the existing storylines seem to fit, please suggest a new one.
 `;
 
 async function azureOpenAITokenProvider(msalInstance: PublicClientApplication): Promise<string> {
@@ -108,31 +110,35 @@ function createSessionPrompter(
 		apiVersion: "2024-08-01-preview",
 	});
 
-	const samples = JSON.stringify([
-		{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
-		{ moment: "I got a headache", storyline: "food and symptom log" },
-		{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
-		{ moment: "We landed in France!", storyline: "vacation log" },
-		{
-			moment: "We met up with Pierre and Yvonne at a cafe in Paris",
-			storyline: "vacation log",
-		},
-		{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },
-	]);
-
-	//* TODO: Do we need to replay these 3 messages with each prompt, or is there context that's remembered?
 	const bodyBase: ChatCompletionCreateParamsNonStreaming = {
 		messages: [
 			{ role: "system", content: sessionSystemPrompt },
-			{ role: "system", content: samples },
+			{ role: "system", content: JSON.stringify(sampleData) },
 			{
 				role: "user",
 				content:
-					"Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples? Just return the string for the storyline name.",
+					"Here's what just happened. Can you suggest which storyline this likely belongs to?",
 			},
 		],
 		model: "gpt-4o",
 		n: 1,
+		response_format: {
+			type: "json_schema",
+			json_schema: ({
+				name: "suggestion_storyline",
+				description: "The suggested storyline for the user's moment. Best if it matches one of the existing storylines, but if not, suggest a new one.",
+				schema: {
+					type: "object", 
+					properties: {
+						storyline: { type: "string" },
+						existing: { type: "boolean" }
+					},
+					required: ["storyline", "existing"],
+					additionalProperties: false,
+		},
+				strict: true,
+			}),
+		},
 	};
 
 	return async (prompt) => {
@@ -145,15 +151,16 @@ function createSessionPrompter(
 				throw new Error("AI did not return result");
 			}
 
-			const suggestedStoryline = result.choices[0].message.content as string;
+			const resultJson = result.choices[0].message.content as string;
+			const { storyline, existing }= JSON.parse(resultJson);
 			const currentTime = new Date().getTime();
 			const moment: Moment = new Moment({
 				description: prompt,
-				additionalNotes: `suggested storyline: ${suggestedStoryline}`,
+				additionalNotes: `suggested storyline: "${storyline}" (${existing ? "existing" : "new"})`,
 				created: currentTime,
 				lastChanged: currentTime,
 				id: uuid(),
-				storyLineIds: [],
+				storyLineIds: [storyline],
 			});
 			return [moment];
 		} catch (e) {

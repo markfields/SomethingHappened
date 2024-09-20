@@ -1,7 +1,11 @@
 import { Dialog } from "@headlessui/react";
+import { Life } from "../schema/app_schema.js";
 import React, { useState } from "react";
+import { VoiceInput } from "./VoiceInput.js";
+
 
 export default function Prompt(props: {
+	life: Life;
 	isOpen: boolean;
 	setIsOpen: (arg: boolean) => void;
 	insertTemplate: (prompt: string) => Promise<void>;
@@ -47,6 +51,7 @@ export default function Prompt(props: {
 						>
 							Get me started
 						</button>
+						<VoiceInput life={props.life} handleMicClick={props.insertTemplate} setIsOpen={props.setIsOpen} />
 						<button className={buttonClass} onClick={() => props.setIsOpen(false)}>
 							Cancel
 						</button>

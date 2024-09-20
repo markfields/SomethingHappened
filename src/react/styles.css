@@ -1,0 +1,15 @@
+.responsive-div {
+	position: fixed;
+	display: flex;
+	align-items: center;
+	bottom: 150px;
+	width: 15%;
+}
+
+/* For mobile devices */
+@media (max-width: 768px) {
+	.responsive-div {
+		width: 50%;
+	}
+}
+

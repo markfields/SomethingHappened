@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import './styles.css';
 import { Life } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";
 import {
@@ -31,6 +32,22 @@ import { Moments } from "../schema/app_schema.js";
 import { undoRedo } from "../utils/undo.js";
 import { SessionsView } from "./sessions_ux.js";
 import { TextField } from "@mui/material";
+import { VoiceInput } from "./VoiceInput.js";
+
+
+export function getDateTime(): string {
+	const now = new Date();
+
+	const options: Intl.DateTimeFormatOptions = {
+		month: "short",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+		hour12: true,
+	};
+	const formatter = new Intl.DateTimeFormat("en-US", options);
+	return formatter.format(now);
+}
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
@@ -45,6 +62,7 @@ export function Canvas(props: {
 	setSaved: (arg: boolean) => void;
 	setFluidMembers: (arg: IMember[]) => void;
 	setShowPrompt: (arg: boolean) => void;
+	insertTemplate: (prompt: string) => Promise<void>;
 }): JSX.Element {
 	const [invalidations, setInvalidations] = useState(0);
 
@@ -111,6 +129,7 @@ export function Canvas(props: {
 				clientId={clientId}
 				clientSession={props.momentTree.root}
 				fluidMembers={props.fluidMembers}
+				insertTemplate={props.insertTemplate}
 			/>
 			<Floater>
 				<ButtonGroup>
@@ -149,8 +168,9 @@ export function LifeView(props: {
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
+	insertTemplate: (prompt: string) => Promise<void>;
 }): JSX.Element {
-	const sessionArray =
+	const momentArray =
 		props.life.moment.length > 0
 			? props.life.moment.map((session) => (
 					<RootSessionWrapper
@@ -174,36 +194,21 @@ export function LifeView(props: {
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
-			props.life.moment.addSession("" + inputValue + " - " + getDateTime());
+			props.insertTemplate("" + inputValue + " - " + getDateTime());
 			setInputValue("");
 		}
 	};
-	function getDateTime(): string {
-		const now = new Date();
-
-		const options: Intl.DateTimeFormatOptions = {
-			month: "short",
-			day: "numeric",
-			hour: "numeric",
-			minute: "numeric",
-			hour12: true,
-		};
-		const formatter = new Intl.DateTimeFormat("en-US", options);
-		return formatter.format(now);
-	}
 
 	return (
-		<div
-			className={`h-full w-full flex flex-col ${
-				sessionArray ? "items-center" : "items-center justify-center"
-			} ${sessionArray ? "justify-between" : ""}`}
-		>
-			<SessionsViewContent sessions={props.life.moment} {...props} />
+		<div style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between" }}>
+			<MomentsViewContent sessions={props.life.moment} {...props} />
+			<div className="responsive-div">
+				
 			<TextField
 				variant="standard"
 				value={inputValue}
 				placeholder="What just happened?"
-				style={{ width: "160px", position: "fixed", bottom: "150px" }}
+				style={{ width: "160px" }}
 				InputProps={{
 					disableUnderline: true,
 				}}
@@ -211,6 +216,8 @@ export function LifeView(props: {
 				onChange={(e) => setInputValue(e.target.value)}
 				onKeyDown={(e) => handleKeyDown(e)}
 			/>
+			<VoiceInput life={props.life} handleMicClick={props.insertTemplate} />
+			</div>
 		</div>
 	);
 }
@@ -239,7 +246,7 @@ export function DaysView(props: {
 	return <>{dayArray}</>;
 }
 
-function SessionsViewContent(props: {
+function MomentsViewContent(props: {
 	sessions: Moments;
 	clientId: string;
 	clientSession: ClientSession;

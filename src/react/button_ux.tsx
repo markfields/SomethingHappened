@@ -67,7 +67,7 @@ export function DeleteDayButton(props: {
 export function NewMomentButton(props: { life: Life; clientId: string }): JSX.Element {
 	const handleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		props.life.moment.addSession();
+		props.life.moment.addMoment();
 	};
 
 	return (

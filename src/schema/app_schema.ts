@@ -93,7 +93,7 @@ export class Moment extends sf.object("Moment", {
 
 export class Moments extends sf.array("Moments", Moment) {
 	// Add a moment to the life
-	public addSession(description?: string) {
+	public addMoment(description?: string) {
 		const currentTime = new Date().getTime();
 		if (description === undefined) {
 			description = "New Session";

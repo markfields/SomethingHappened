@@ -5,8 +5,6 @@ import axios from "axios";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
 import { AccountInfo } from "@azure/msal-browser";
 
-
-
 const sessionSystemPrompt = `You are a service named Copilot that takes a user prompt of something that just happened in their life (a "moment"), and categorizes
 it based on existing "storylines" of "moments" they have recorded.
 I will provide you with sample storylines of moments, and you will suggest which storyline is the best fit for the user's moment, provided in the prompt.
@@ -62,12 +60,15 @@ export function createSessionPrompter(
 	});
 
 	const samples = JSON.stringify([
-		{ moment: "I ate a cheeseburger", storyline: "food and symptom log"},
-		{ moment: "I got a headache", storyline: "food and symptom log"},
-		{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log"},
-		{ moment: "We landed in France!", storyline: "vacation log"},
-		{ moment: "We met up with Pierre and Yvonne at a cafe in Paris", storyline: "vacation log"},
-		{ moment: "We went to the Louvre this afternoon", storyline: "vacation log"},
+		{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
+		{ moment: "I got a headache", storyline: "food and symptom log" },
+		{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
+		{ moment: "We landed in France!", storyline: "vacation log" },
+		{
+			moment: "We met up with Pierre and Yvonne at a cafe in Paris",
+			storyline: "vacation log",
+		},
+		{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },
 	]);
 
 	//* TODO: Do we need to replay these 3 messages with each prompt, or is there context that's remembered?
@@ -75,16 +76,20 @@ export function createSessionPrompter(
 		messages: [
 			{ role: "system", content: sessionSystemPrompt },
 			{ role: "system", content: samples },
-			{ role: "user", content: "Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples? Just return the string for the storyline name." },
+			{
+				role: "user",
+				content:
+					"Here's what just happened. Can you suggest the best fit for which storyline this belongs to from the samples? Just return the string for the storyline name.",
+			},
 		],
 		model: "gpt-4o",
-		n:1,
+		n: 1,
 	};
 
 	return async (prompt) => {
 		console.log("Prompting Azure OpenAI with:", prompt);
 		try {
-			const body = {...bodyBase};
+			const body = { ...bodyBase };
 			body.messages.push({ role: "user", content: prompt });
 			const result = await openai.chat.completions.create(body);
 			if (!result.created) {
@@ -93,15 +98,14 @@ export function createSessionPrompter(
 
 			const suggestedStoryline = result.choices[0].message.content as string;
 			const currentTime = new Date().getTime();
-			const moment: Moment = 
-				new Moment({
-					description: prompt,
-					additionalNotes: `suggested storyline: ${suggestedStoryline}`,
-					created: currentTime,
-					lastChanged: currentTime,
-					id: uuid(),
-					storyLineIds: [],
-				});
+			const moment: Moment = new Moment({
+				description: prompt,
+				additionalNotes: `suggested storyline: ${suggestedStoryline}`,
+				created: currentTime,
+				lastChanged: currentTime,
+				id: uuid(),
+				storyLineIds: [],
+			});
 			return [moment];
 		} catch (e) {
 			return undefined;

@@ -121,7 +121,7 @@ function createSessionPrompter(
 			json_schema: {
 				name: "suggestion_storyline",
 				description:
-					"The suggested storyline for the user's moment. Best if it matches one of the existing storylines, but if not, suggest a new one.",
+					"The suggested storyline for the user's moment. Check first if it matches one of the existing storylines, and if not suggest a new one.",
 				schema: {
 					type: "object",
 					properties: {

@@ -115,12 +115,35 @@ export class StoryLine extends sf.object("StoryLine", {
 		});
 	}
 
+	public updateName(name: string) {
+		this.name = name;
+	}
+
 	public updateMomentIds(momentIds: string[]) {
 		// Clear the list of IDs and insert provided ones
 		this.momentIds.removeRange();
 		momentIds.forEach((id) => {
 			this.momentIds.insertAtEnd(id);
 		});
+	}
+
+	public delete() {
+		const parent = Tree.parent(this);
+		if (Tree.is(parent, StoryLineMap)) {
+        // Get all moments associated with this StoryLine
+        this.momentIds.forEach((momentId: string) => {
+            const storyLinesParent = Tree.parent(parent);  // This will be the Life instance
+            if (Tree.is(storyLinesParent, Life)) {
+                const moment = storyLinesParent.moments.get(momentId);
+                if (moment !== undefined) {
+                    moment.delete(this); // Call delete on the Moment, passing the current StoryLine
+                }
+            }
+        });
+        
+        // Now delete this StoryLine from the StoryLineMap
+        parent.delete(this.id);
+    	}
 	}
 
 	public removeMomentId(momentId: string) {

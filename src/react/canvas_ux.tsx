@@ -16,8 +16,10 @@ import {
 	TreeView,
 } from "fluid-framework";
 import { undoRedo } from "../utils/undo.js";
-import { StoryLineView } from "./storyLines_ux.js";
-import { TextField } from "@mui/material";
+import { StoryLineView, StorylineDialog } from "./storyLines_ux.js";
+import { TextField, Button } from "@mui/material";
+import { Add } from "@mui/icons-material";
+
 import { VoiceInput } from "./VoiceInput.js";
 import { GPTService, IGPTPromptResponse } from "../services/gptService.js";
 
@@ -50,6 +52,7 @@ export function Canvas(props: {
 	setShowPrompt: (arg: boolean) => void;
 }): JSX.Element {
 	const [invalidations, setInvalidations] = useState(0);
+	const [open, setOpen] = useState(false);
 
 	// Register for tree deltas when the component mounts.
 	// Any time the tree changes, the app will update
@@ -114,6 +117,27 @@ export function Canvas(props: {
 				clientId={clientId}
 				clientSession={props.momentTree.root}
 				fluidMembers={props.fluidMembers}
+			/>
+			<Button
+				size="large"
+				variant="outlined"
+				color="primary"
+				startIcon={<Add />}
+				style={{
+					position: "fixed",
+					bottom: "5%",
+					right: "3%",
+					zIndex: 1000,
+				}}
+				onClick={() => setOpen(true)}
+			>
+				New Story
+			</Button>
+			<StorylineDialog
+				type="new"
+				isOpen={open}
+				setIsOpen={setOpen}
+				life={props.lifeTree.root}
 			/>
 		</div>
 	);
@@ -194,6 +218,7 @@ export function LifeView(props: {
 }
 
 function StoryLinesViewContent(props: {
+	life: Life;
 	storyLines: StoryLineMap;
 	moments: MomentMap;
 	clientId: string;
@@ -204,6 +229,7 @@ function StoryLinesViewContent(props: {
 		props.storyLines.size > 0
 			? [...props.storyLines.values()].map((storyLine) => (
 					<StoryLineView
+						life={props.life}
 						key={storyLine.id}
 						storyLine={storyLine}
 						moments={props.moments}

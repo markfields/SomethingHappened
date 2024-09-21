@@ -4,21 +4,35 @@
  */
 
 import React from "react";
-import { Moment, MomentMap, StoryLine, StoryLineMap } from "../schema/app_schema.js";
+import { Life, Moment, MomentMap, StoryLine } from "../schema/app_schema.js";
+import { Save } from "@mui/icons-material";
 import { moveItem } from "../utils/app_helpers.js";
 import { ConnectableElement, useDrop } from "react-dnd";
 import { dragType } from "../utils/utils.js";
 import { ClientSession } from "../schema/session_schema.js";
 import { IMember, Tree } from "fluid-framework";
 import { RootMomentWrapper } from "./moment_ux.js";
+import {
+	Button,
+	DialogActions,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	IconButton,
+	TextField,
+} from "@mui/material";
+import { Edit } from "@mui/icons-material";
 
 export function StoryLineView(props: {
+	life: Life;
 	storyLine: StoryLine;
 	moments: MomentMap;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 }): JSX.Element {
+	const [open, setOpen] = React.useState(false);
+
 	const [{ isOver, canDrop }, drop] = useDrop(() => ({
 		accept: [dragType.MOMENT],
 		collect: (monitor) => ({
@@ -73,9 +87,22 @@ export function StoryLineView(props: {
 			}
 		>
 			<div className={backgroundColor + " " + formatting}>
-				<StoryLineTitle title={props.storyLine.name} />
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "row",
+						width: "100%",
+						justifyContent: "space-between",
+					}}
+				>
+					<StoryLineTitle title={props.storyLine.name} />
+					<IconButton onClick={() => setOpen(true)}>
+						<Edit />
+					</IconButton>
+				</div>
 				<StoryLineViewContent {...props} />
 			</div>
+			<StorylineDialog type="edit" isOpen={open} setIsOpen={setOpen} {...props} />
 		</div>
 	);
 }
@@ -85,10 +112,19 @@ function StoryLineTitle(props: { title: string }): JSX.Element {
 		return <></>;
 	} else {
 		return (
-			<div className="flex flex-row justify-between">
-				<div className="flex w-0 grow p-1 mb-2 mr-2 text-lg font-bold text-black bg-transparent">
-					{props.title}
-				</div>
+			<div
+				style={{
+					display: "inline-flex",
+					flexGrow: 0,
+					padding: "0.25rem",
+					fontSize: "1.125rem",
+					fontWeight: "bold",
+					color: "black",
+					backgroundColor: "transparent",
+					whiteSpace: "nowrap",
+				}}
+			>
+				{props.title}
 			</div>
 		);
 	}
@@ -123,5 +159,72 @@ function StoryLineViewContent(props: {
 		<>
 			<div className="flex overflow-auto gap-4 p-4 content-start">{momentArray}</div>
 		</>
+	);
+}
+
+export function StorylineDialog(props: {
+	type: string;
+	isOpen: boolean;
+	setIsOpen: (arg: boolean) => void;
+	storyLine?: StoryLine;
+	life: Life;
+}): JSX.Element {
+	const buttonClass = "text-white font-bold py-2 px-4 rounded";
+
+	const [story, setStory] = React.useState(props.storyLine?.name ?? "");
+	const handleClose = () => {
+		props.setIsOpen(false);
+	};
+
+	const handleDelete = () => {
+		const confirmation = window.confirm("Are you sure you want to delete this story?");
+		if (confirmation) {
+			props.storyLine?.delete();
+			handleClose();
+		}
+	};
+
+	const handleSave = () => {
+		props.life.storyLines.createStoryLine(story);
+		props.setIsOpen(false);
+	};
+
+	return (
+		<Dialog fullWidth={true} maxWidth={"sm"} open={props.isOpen} onClose={handleClose}>
+			{props.type === "edit" ? (
+				<>
+					<DialogTitle>Edit Story</DialogTitle>
+					<DialogContent style={{ paddingTop: "10px" }}>
+						<TextField
+							label="Storyline Name"
+							defaultValue={story}
+							onChange={(e) => props.storyLine?.updateName(e.target.value)}
+						/>
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={handleDelete} color="error">
+							Delete Story
+						</Button>
+						<Button onClick={handleClose}>Close</Button>
+					</DialogActions>
+				</>
+			) : (
+				<>
+					<DialogTitle>New Story</DialogTitle>
+					<DialogContent style={{ paddingTop: "10px" }}>
+						<TextField
+							label="Storyline Name"
+							onChange={(e) => setStory(e.target.value)}
+						/>
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={handleSave} startIcon={<Save />}>
+							Save Story
+						</Button>
+						<Button onClick={handleClose}>Close</Button>
+					</DialogActions>
+				</>
+			)}
+		</Dialog>
 	);
 }

@@ -295,7 +295,7 @@ export default function MomentDetails(props: {
 			onClose={() => props.setIsOpen(false)}
 		>
 			<Dialog.Panel className="w-full text-left align-middle">
-				<Dialog.Title className="font-bold text-lg pb-1">Session Details</Dialog.Title>
+				<Dialog.Title className="font-bold text-lg pb-1">Moment Details</Dialog.Title>
 				<div>
 					<input
 						className="resize-none border-2 border-gray-500 bg-white mb-2 p-2 text-black w-full h-full"

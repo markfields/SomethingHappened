@@ -12,7 +12,7 @@ import {
 	TextField,
 	createFilterOptions,
 } from "@mui/material";
-import { Life, Moment } from "../schema/app_schema.js";
+import { Moment, StoryLine } from "../schema/app_schema.js";
 import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
 import { testRemoteNoteSelection, updateRemoteNoteSelection } from "../utils/session_helpers.js";
@@ -26,6 +26,7 @@ import { ShowDetailsButton } from "./button_ux.js";
 
 export function RootMomentWrapper(props: {
 	moment: Moment;
+	storyLine: StoryLine;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
@@ -48,6 +49,7 @@ export function RootMomentWrapper(props: {
 				isOpen={isDetailsOpen}
 				setIsOpen={setIsDetailsOpen}
 				moment={props.moment}
+				storyLine={props.storyLine}
 			/>
 		</Paper>
 	);
@@ -286,6 +288,7 @@ export default function MomentDetails(props: {
 	isOpen: boolean;
 	setIsOpen: (arg: boolean) => void;
 	moment: Moment;
+	storyLine: StoryLine;
 }): JSX.Element {
 	const buttonClass = "text-white font-bold py-2 px-4 rounded";
 	return (
@@ -323,7 +326,7 @@ export default function MomentDetails(props: {
 						<button
 							className={`bg-red-500 hover:bg-red-800 ${buttonClass}`}
 							onClick={() => {
-								props.moment.delete(), props.setIsOpen(false);
+								props.moment.delete(props.storyLine), props.setIsOpen(false);
 							}}
 						>
 							Delete Moment
@@ -336,29 +339,43 @@ export default function MomentDetails(props: {
 }
 
 function TypeList(props: { moment: Moment }): JSX.Element {
-	const [selectedTags, setSelectedTags] = React.useState<string[]>(
-		props.moment.storyLineIds.map((tag) => tag),
+	const allStoryLines = props.moment.getAllStoryLines();
+	if (allStoryLines === undefined) {
+		console.error("Unable to retrieve all story lines.");
+		return <></>;
+	}
+	const [selectedStoryLines, setSelectedStoryLines] = React.useState<string[]>(
+		props.moment.storyLineIds.map((id) => id),
 	);
-	const [availableTags, setAvailableTags] = React.useState<string[]>([
-		"Vacation",
-		"Work",
-		"Personal Nutrition",
-	]);
+	const [availableStoryLines, setAvailableStoryLines] = React.useState<string[]>(
+		[...allStoryLines.values()].map((storyLine) => storyLine.id),
+	);
 
 	const filter = createFilterOptions<string>();
 
-	const handleTagChange = (
+	const convertIdToNames = (ids: string[]) => {
+		return ids.map((id) => convertIdToName(id));
+	};
+	const convertIdToName = (id: string) => {
+		const storyLine = allStoryLines.get(id);
+		return storyLine ? storyLine.name : id;
+	};
+
+	const handleStoryLinesChange = (
 		event: React.SyntheticEvent<Element, Event>,
 		newValue: string[] | null,
 	) => {
 		if (newValue !== null) {
-			setSelectedTags(newValue);
-			// Check if the last value exists and is not already in availableTags
+			setSelectedStoryLines(newValue);
+			// Check if the last value exists and is not already in availableStoryLines
 			const lastValue = newValue.at(-1);
-			if (lastValue && !availableTags.includes(lastValue)) {
-				setAvailableTags((prev) => [...prev, lastValue]); // Add new tag to available tags
+			if (lastValue && !availableStoryLines.includes(lastValue)) {
+				// ! We don't need to provide moment.id because it'll get updated by the "updateStoryLineIds" call below
+				const newStoryLine = allStoryLines.createStoryLine(lastValue);
+				setAvailableStoryLines((prev) => [...prev, newStoryLine.id]); // Add new storyLine to available storyLine
+				newValue[newValue.length - 1] = newStoryLine.id;
 			}
-			props.moment.updateStoryLineIds(newValue);
+			props.moment.updateStoryLineIds(newValue, allStoryLines);
 		}
 	};
 	const filterOptions = (options: string[], params: FilterOptionsState<string>) => {
@@ -366,7 +383,7 @@ function TypeList(props: { moment: Moment }): JSX.Element {
 		const { inputValue } = params;
 		const isExisting = options.some((option) => inputValue === option);
 
-		// Suggest creating a new tag if it doesn't exist
+		// Suggest creating a new storyLine if it doesn't exist
 		if (inputValue !== "" && !isExisting) {
 			filtered.push(inputValue);
 		}
@@ -378,11 +395,11 @@ function TypeList(props: { moment: Moment }): JSX.Element {
 		<>
 			<Autocomplete
 				multiple
-				value={selectedTags}
-				onChange={handleTagChange}
+				value={selectedStoryLines}
+				onChange={handleStoryLinesChange}
 				filterOptions={(options, params) => {
 					const filtered = filterOptions(
-						availableTags.filter((tag) => !selectedTags.includes(tag)),
+						availableStoryLines.filter((id) => !selectedStoryLines.includes(id)),
 						params,
 					);
 					return filtered;
@@ -390,12 +407,12 @@ function TypeList(props: { moment: Moment }): JSX.Element {
 				selectOnFocus
 				clearOnBlur
 				handleHomeEndKeys
-				options={availableTags}
-				getOptionLabel={(option) => option}
+				options={availableStoryLines}
+				getOptionLabel={convertIdToName}
 				sx={{ width: 300 }}
 				freeSolo
 				renderInput={(params) => (
-					<TextField {...params} variant="standard" label="Add tags" />
+					<TextField {...params} variant="standard" label="Add story lines" />
 				)}
 			/>
 		</>

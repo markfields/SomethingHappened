@@ -6,12 +6,11 @@
 import React from "react";
 import { Life, Moment, MomentMap, StoryLine } from "../schema/app_schema.js";
 import { Save } from "@mui/icons-material";
-import { moveItem } from "../utils/app_helpers.js";
 import { ConnectableElement, useDrop } from "react-dnd";
 import { dragType } from "../utils/utils.js";
 import { ClientSession } from "../schema/session_schema.js";
 import { IMember, Tree } from "fluid-framework";
-import { RootMomentWrapper } from "./moment_ux.js";
+import { IDragDropMoment, RootMomentWrapper } from "./moment_ux.js";
 import {
 	Button,
 	DialogActions,
@@ -39,11 +38,12 @@ export function StoryLineView(props: {
 			isOver: !!monitor.isOver({ shallow: true }),
 			canDrop: !!monitor.canDrop(),
 		}),
-		canDrop: (item) => {
-			if (Tree.is(item, Moment)) return true;
+		canDrop: (item: IDragDropMoment) => {
+			if (Tree.is(item.moment, Moment)) return true;
 			return false;
 		},
-		drop: (item, monitor) => {
+		drop: (item: IDragDropMoment, monitor) => {
+			// Did we process this Moment drop already (aka processed in moment_ux.tsx)
 			const didDrop = monitor.didDrop();
 			if (didDrop) {
 				return;
@@ -54,10 +54,10 @@ export function StoryLineView(props: {
 				return;
 			}
 
-			const droppedItem = item;
-			// if (Tree.is(droppedItem, Moment)) {
-			// 	moveItem(droppedItem, props.sessions.length, props.sessions);
-			// }
+			item.moment.moveMomentToDifferentStoryLine({
+				originStoryLine: item.storyLine,
+				destinationStoryLine: props.storyLine,
+			});
 
 			return;
 		},
@@ -138,18 +138,16 @@ function StoryLineViewContent(props: {
 	fluidMembers: IMember[];
 }): JSX.Element {
 	const momentArray = props.storyLine.momentIds.map((id) => props.moments.get(id)!);
-	const momentContentArray = [...momentArray]
-		.sort((a, b) => a.created - b.created)
-		.map((moment) => (
-			<RootMomentWrapper
-				key={`${props.storyLine.id}-${moment.id}`}
-				moment={moment}
-				storyLine={props.storyLine}
-				clientId={props.clientId}
-				clientSession={props.clientSession}
-				fluidMembers={props.fluidMembers}
-			/>
-		));
+	const momentContentArray = [...momentArray].map((moment) => (
+		<RootMomentWrapper
+			key={`${props.storyLine.id}-${moment.id}`}
+			moment={moment}
+			storyLine={props.storyLine}
+			clientId={props.clientId}
+			clientSession={props.clientSession}
+			fluidMembers={props.fluidMembers}
+		/>
+	));
 
 	return (
 		<>

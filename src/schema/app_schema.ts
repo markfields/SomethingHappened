@@ -92,6 +92,39 @@ export class Moment extends sf.object("Moment", {
 	public removeStoryLineId(storyLineId: string) {
 		this.storyLineIds.removeAt(this.storyLineIds.indexOf(storyLineId));
 	}
+
+	public moveMomentToDifferentStoryLine(props: {
+		originStoryLine: StoryLine;
+		destinationStoryLine: StoryLine;
+		destinationMoment?: Moment;
+	}) {
+		const { originStoryLine, destinationStoryLine, destinationMoment } = props;
+
+		let indexToPlaceAt = -1;
+		if (destinationMoment !== undefined) {
+			indexToPlaceAt = destinationStoryLine.momentIds.indexOf(destinationMoment.id);
+		}
+		indexToPlaceAt =
+			indexToPlaceAt !== -1 ? indexToPlaceAt : destinationStoryLine.momentIds.length;
+
+		if (originStoryLine.id === destinationStoryLine.id) {
+			// Moving within StoryLine
+			const originIndex = originStoryLine.momentIds.indexOf(this.id);
+			originStoryLine.momentIds.moveToIndex(indexToPlaceAt, originIndex);
+		} else {
+			// Moving to new StoryLine
+			const currentIndex = destinationStoryLine.momentIds.indexOf(this.id);
+			if (currentIndex !== -1) {
+				// Moment already present in destinationStoryLine
+				destinationStoryLine.momentIds.moveToIndex(indexToPlaceAt, currentIndex);
+			} else {
+				destinationStoryLine.momentIds.insertAt(indexToPlaceAt, this.id);
+				this.storyLineIds.insertAtEnd(destinationStoryLine.id);
+			}
+
+			this.delete(originStoryLine);
+		}
+	}
 }
 
 export class MomentMap extends sf.map("MomentMap", Moment) {

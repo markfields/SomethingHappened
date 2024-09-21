@@ -13,7 +13,6 @@ import {
 	createFilterOptions,
 } from "@mui/material";
 import { Moment, StoryLine } from "../schema/app_schema.js";
-import { moveItem } from "../utils/app_helpers.js";
 import { dragType, selectAction } from "../utils/utils.js";
 import { testRemoteNoteSelection, updateRemoteNoteSelection } from "../utils/session_helpers.js";
 import { ConnectableElement, useDrag, useDrop } from "react-dnd";
@@ -57,6 +56,7 @@ export function RootMomentWrapper(props: {
 
 export function MomentView(props: {
 	moment: Moment;
+	storyLine: StoryLine;
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
@@ -88,6 +88,7 @@ export function MomentView(props: {
 	const test = () => {
 		testRemoteNoteSelection(
 			props.moment,
+			props.storyLine,
 			props.clientSession,
 			props.clientId,
 			setRemoteSelected,
@@ -97,7 +98,13 @@ export function MomentView(props: {
 	};
 
 	const update = (action: selectAction) => {
-		updateRemoteNoteSelection(props.moment, action, props.clientSession, props.clientId);
+		updateRemoteNoteSelection(
+			props.moment,
+			props.storyLine,
+			action,
+			props.clientSession,
+			props.clientId,
+		);
 	};
 
 	// Register for tree deltas when the component mounts.
@@ -147,7 +154,7 @@ export function MomentView(props: {
 
 	const [{ isDragging }, drag] = useDrag(() => ({
 		type: dragType.MOMENT,
-		item: props.moment,
+		item: { moment: props.moment, storyLine: props.storyLine } as IDragDropMoment,
 		collect: (monitor) => ({
 			isDragging: monitor.isDragging(),
 		}),
@@ -159,15 +166,15 @@ export function MomentView(props: {
 			isOver: !!monitor.isOver(),
 			canDrop: !!monitor.canDrop(),
 		}),
-		canDrop: (item) => {
-			if (Tree.is(item, Moment) && item !== props.moment) return true;
-			return false;
+		canDrop: (item: IDragDropMoment) => {
+			return item.moment !== props.moment;
 		},
-		drop: (item) => {
-			const droppedItem = item;
-			// if (Tree.is(droppedItem, Moment) && Tree.is(parent, Moments)) {
-			// 	moveItem(droppedItem, parent.indexOf(props.moment), parent);
-			// }
+		drop: (item: IDragDropMoment) => {
+			item.moment.moveMomentToDifferentStoryLine({
+				originStoryLine: item.storyLine,
+				destinationStoryLine: props.storyLine,
+				destinationMoment: props.moment,
+			});
 			return;
 		},
 	}));
@@ -231,6 +238,11 @@ export function MomentView(props: {
 			</Box>
 		</Box>
 	);
+}
+
+export interface IDragDropMoment {
+	moment: Moment;
+	storyLine: StoryLine;
 }
 
 function RemoteSelection(props: { show: boolean }): JSX.Element {

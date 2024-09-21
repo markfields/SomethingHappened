@@ -246,7 +246,7 @@ function StoryLinesViewContent(props: {
 				className={`flex ${
 					storyLinesArray ? "flex-wrap" : "hidden"
 				} w-full gap-4 p-4 content-start`}
-				style={{ overflow: "auto"}}
+				style={{ overflow: "auto" }}
 			>
 				{storyLinesArray}
 			</div>

@@ -130,20 +130,20 @@ export class StoryLine extends sf.object("StoryLine", {
 	public delete() {
 		const parent = Tree.parent(this);
 		if (Tree.is(parent, StoryLineMap)) {
-        // Get all moments associated with this StoryLine
-        this.momentIds.forEach((momentId: string) => {
-            const storyLinesParent = Tree.parent(parent);  // This will be the Life instance
-            if (Tree.is(storyLinesParent, Life)) {
-                const moment = storyLinesParent.moments.get(momentId);
-                if (moment !== undefined) {
-                    moment.delete(this); // Call delete on the Moment, passing the current StoryLine
-                }
-            }
-        });
-        
-        // Now delete this StoryLine from the StoryLineMap
-        parent.delete(this.id);
-    	}
+			// Get all moments associated with this StoryLine
+			this.momentIds.forEach((momentId: string) => {
+				const storyLinesParent = Tree.parent(parent); // This will be the Life instance
+				if (Tree.is(storyLinesParent, Life)) {
+					const moment = storyLinesParent.moments.get(momentId);
+					if (moment !== undefined) {
+						moment.delete(this); // Call delete on the Moment, passing the current StoryLine
+					}
+				}
+			});
+
+			// Now delete this StoryLine from the StoryLineMap
+			parent.delete(this.id);
+		}
 	}
 
 	public removeMomentId(momentId: string) {

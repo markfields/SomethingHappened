@@ -229,7 +229,7 @@ export class Life extends sf.object("Life", {
 		 */
 		const storyLineIdMap = new Map<string, string>();
 
-		sampleData.forEach((item) => {
+		demoData.forEach((item) => {
 			if (!storyLineIdMap.has(item.storyline)) {
 				const storyLine = StoryLine.create(item.storyline);
 				storyLineIdMap.set(item.storyline, storyLine.id);
@@ -250,13 +250,13 @@ export class Life extends sf.object("Life", {
 	}
 }
 
-export const sampleData = [
+const demoData = [
 	{ moment: "I ate a cheeseburger", storyline: "food and symptom log" },
 	{ moment: "I got a headache", storyline: "food and symptom log" },
 	{ moment: "I had a mild sore throat this morning", storyline: "food and symptom log" },
 	{ moment: "We landed in France!", storyline: "vacation log" },
 	{
-		moment: "We met up with Pierre and Yvonne at a cafe in Paris",
+		moment: "We met up with Yann at a cafe in Paris",
 		storyline: "vacation log",
 	},
 	{ moment: "We went to the Louvre this afternoon", storyline: "vacation log" },

@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import "./styles.css";
 import { Life, Moment, MomentMap, StoryLine } from "../schema/app_schema.js";
 import { Save } from "@mui/icons-material";
 import { ConnectableElement, useDrop } from "react-dnd";
@@ -29,6 +30,7 @@ export function StoryLineView(props: {
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
+	index: number;
 }): JSX.Element {
 	const [open, setOpen] = React.useState(false);
 
@@ -71,8 +73,8 @@ export function StoryLineView(props: {
 		e.stopPropagation();
 	};
 
-	let backgroundColor = "bg-gray-200";
-	let formatting = "p-2 transition-all overflow-auto";
+	let storylineColors = ["#ffd4d4", "#c8bdd4", "#ccd5ae", "#fcf6bd", "#95b0cf"];
+
 	let borderFormatting =
 		"relative transition-all border-4 border-dashed h-fit overflow-hidden w-full";
 
@@ -85,8 +87,17 @@ export function StoryLineView(props: {
 				" " +
 				(isOver && canDrop ? "border-gray-500" : "border-transparent")
 			}
+			style={{ paddingBottom: "10px" }}
 		>
-			<div className={backgroundColor + " " + formatting}>
+			<div
+				style={{
+					overflow: "auto",
+					transition: "all",
+					background: "#282424",
+					border: "2px solid #f2f2f2",
+					borderRadius: "10px",
+				}}
+			>
 				<div
 					style={{
 						display: "flex",
@@ -95,19 +106,22 @@ export function StoryLineView(props: {
 						justifyContent: "space-between",
 					}}
 				>
-					<StoryLineTitle title={props.storyLine.name} />
+					<StoryLineTitle
+						title={props.storyLine.name}
+						color={storylineColors[props.index % 5]}
+					/>
 					<IconButton onClick={() => setOpen(true)}>
-						<Edit />
+						<Edit sx={{ color: "#fff" }} />
 					</IconButton>
 				</div>
-				<StoryLineViewContent {...props} />
+				<StoryLineViewContent color={storylineColors[props.index % 5]} {...props} />
 			</div>
 			<StorylineDialog type="edit" isOpen={open} setIsOpen={setOpen} {...props} />
 		</div>
 	);
 }
 
-function StoryLineTitle(props: { title: string }): JSX.Element {
+function StoryLineTitle(props: { title: string; color: string }): JSX.Element {
 	if (props.title === "") {
 		return <></>;
 	} else {
@@ -116,13 +130,15 @@ function StoryLineTitle(props: { title: string }): JSX.Element {
 				style={{
 					display: "inline-flex",
 					flexGrow: 0,
-					padding: "0.25rem",
 					fontSize: "1.125rem",
-					fontWeight: "bold",
 					color: "black",
-					backgroundColor: "transparent",
+					fontWeight: 700,
+					backgroundColor: `${props.color}`,
 					whiteSpace: "nowrap",
+					padding: "7px",
+					borderRadius: "0px 0px 10px 0px",
 				}}
+				className="roboto-bold"
 			>
 				{props.title}
 			</div>
@@ -136,17 +152,11 @@ function StoryLineViewContent(props: {
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
+	color: string;
 }): JSX.Element {
 	const momentArray = props.storyLine.momentIds.map((id) => props.moments.get(id)!);
 	const momentContentArray = [...momentArray].map((moment) => (
-		<RootMomentWrapper
-			key={`${props.storyLine.id}-${moment.id}`}
-			moment={moment}
-			storyLine={props.storyLine}
-			clientId={props.clientId}
-			clientSession={props.clientSession}
-			fluidMembers={props.fluidMembers}
-		/>
+		<RootMomentWrapper key={`${props.storyLine.id}-${moment.id}`} moment={moment} {...props} />
 	));
 
 	return (
@@ -184,7 +194,13 @@ export function StorylineDialog(props: {
 	};
 
 	return (
-		<Dialog fullWidth={true} maxWidth={"sm"} open={props.isOpen} onClose={handleClose}>
+		<Dialog
+			fullWidth={true}
+			maxWidth={"sm"}
+			open={props.isOpen}
+			onClose={handleClose}
+			sx={{ "& .MuiPaper-root": { backgroundColor: "#fffcf2" } }}
+		>
 			{props.type === "edit" ? (
 				<>
 					<DialogTitle>Edit Story</DialogTitle>

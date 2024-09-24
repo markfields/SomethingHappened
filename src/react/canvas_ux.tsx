@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import "./styles.css";
+import { createTheme, ThemeProvider, alpha, getContrastRatio } from "@mui/material/styles";
 import { Life, MomentMap, StoryLineMap } from "../schema/app_schema.js";
 import { ClientSession } from "../schema/session_schema.js";
 import {
@@ -36,6 +37,52 @@ export function getDateTime(): string {
 	const formatter = new Intl.DateTimeFormat("en-US", options);
 	return formatter.format(now);
 }
+
+declare module "@mui/material/styles" {
+	interface Palette {
+		black: Palette["primary"];
+		white: Palette["primary"];
+	}
+
+	interface PaletteOptions {
+		black?: PaletteOptions["primary"];
+		white?: PaletteOptions["primary"];
+	}
+}
+
+declare module "@mui/material/Button" {
+	interface ButtonPropsColorOverrides {
+		black: true;
+	}
+}
+declare module "@mui/material/TextField" {
+	interface TextFieldPropsColorOverrides {
+		white: true;
+	}
+}
+
+const blackBase = "#000";
+const blackMain = alpha(blackBase, 0.7);
+
+const whiteBase = "#fff";
+const whiteMain = alpha(whiteBase, 0.7);
+
+const theme = createTheme({
+	palette: {
+		black: {
+			main: blackMain,
+			light: alpha(blackBase, 0.5),
+			dark: alpha(blackBase, 0.9),
+			contrastText: getContrastRatio(blackBase, "#fff") > 4.5 ? "#fff" : "#111",
+		},
+		white: {
+			main: whiteMain,
+			light: alpha(whiteBase, 0.5),
+			dark: alpha(whiteBase, 0.9),
+			contrastText: getContrastRatio(whiteBase, "#fff") > 4.5 ? "#fff" : "#111",
+		},
+	},
+});
 
 export function Canvas(props: {
 	lifeTree: TreeView<typeof Life>;
@@ -118,21 +165,25 @@ export function Canvas(props: {
 				clientSession={props.momentTree.root}
 				fluidMembers={props.fluidMembers}
 			/>
-			<Button
-				size="large"
-				variant="outlined"
-				color="primary"
-				startIcon={<Add />}
-				style={{
-					position: "fixed",
-					bottom: "5%",
-					right: "3%",
-					zIndex: 1000,
-				}}
-				onClick={() => setOpen(true)}
-			>
-				New Story
-			</Button>
+			<ThemeProvider theme={theme}>
+				<Button
+					size="large"
+					variant="outlined"
+					// TODO:  update to add custom theme
+					color="black"
+					startIcon={<Add />}
+					style={{
+						position: "fixed",
+						backgroundColor: "#ffcc64",
+						bottom: "5%",
+						right: "3%",
+						zIndex: 1000,
+					}}
+					onClick={() => setOpen(true)}
+				>
+					New Story
+				</Button>
+			</ThemeProvider>
 			<StorylineDialog
 				type="new"
 				isOpen={open}
@@ -191,6 +242,7 @@ export function LifeView(props: {
 				flexDirection: "column",
 				alignItems: "center",
 				justifyContent: "space-between",
+				backgroundColor: "#121212",
 			}}
 		>
 			<StoryLinesViewContent
@@ -198,13 +250,14 @@ export function LifeView(props: {
 				moments={props.life.moments}
 				{...props}
 			/>
-			<div className="responsive-div">
+			<div className="responsive-div" style={{width: "350px"}}>
 				<TextField
 					variant="standard"
 					value={inputValue}
 					placeholder="What just happened?"
-					style={{ width: "160px" }}
 					InputProps={{
+						style: { color: "#fff", fontSize: "2rem" },
+						className: "roboto-bold",
 						disableUnderline: true,
 					}}
 					inputRef={inputRef}
@@ -227,7 +280,7 @@ function StoryLinesViewContent(props: {
 }): JSX.Element {
 	const storyLinesArray =
 		props.storyLines.size > 0
-			? [...props.storyLines.values()].map((storyLine) => (
+			? [...props.storyLines.values()].map((storyLine, index) => (
 					<StoryLineView
 						life={props.life}
 						key={storyLine.id}
@@ -236,6 +289,7 @@ function StoryLinesViewContent(props: {
 						clientId={props.clientId}
 						clientSession={props.clientSession}
 						fluidMembers={props.fluidMembers}
+						index={index}
 					/>
 			  ))
 			: null;

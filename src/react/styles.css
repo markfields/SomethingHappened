@@ -12,3 +12,15 @@
 		width: 50%;
 	}
 }
+
+.roboto {
+	font-family: "Roboton Flex", sans-serif;
+	font-weight: 500;
+	font-style: normal;
+}
+
+.roboto-bold {
+	font-family: "Roboton Flex", sans-serif;
+	font-weight: 700;
+	font-style: normal;
+}

@@ -1,7 +1,6 @@
 import { AzureOpenAI } from "openai";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources/index.mjs";
 import { PublicClientApplication } from "@azure/msal-browser";
-import { sampleData } from "../schema/app_schema.js";
 import { getAccessToken, getSessionToken } from "../utils/auth_helpers.js";
 
 export class GPTService {
@@ -35,7 +34,7 @@ export class GPTService {
 		}
 	}
 
-	public static async prompt(momentDescription: string, sampleJson?: string): Promise<IGPTPromptResponse> {
+	public static async prompt(momentDescription: string, sampleJson: string): Promise<IGPTPromptResponse> {
 		const instance = GPTService.instance;
 		instance.createPrompterIfNeeded();
 
@@ -92,7 +91,7 @@ export interface IGPTPromptResponse {
 
 function createStoryLinePrompter(
 	msalInstance: PublicClientApplication,
-): (prompt: string, sampleJson?: string) => Promise<IGPTPromptResponse | undefined> {
+): (prompt: string, sampleJson: string) => Promise<IGPTPromptResponse | undefined> {
 	console.log("Creating Azure OpenAI prompter");
 
 	const endpoint =
@@ -133,15 +132,12 @@ function createStoryLinePrompter(
 		},
 	};
 
-	return async (prompt, sampleJson?: string) => {
+	return async (prompt, sampleJson: string) => {
 		console.log("Prompting Azure OpenAI with:", prompt);
-		if (sampleJson === undefined) {
-			console.error("No sample data provided. Using default sample data.");
-		}
 		try {
 			body.messages.length = 0;
 			body.messages.push({ role: "system", content: storyLineSystemPrompt });
-			body.messages.push({ role: "system", content: sampleJson ?? JSON.stringify(sampleData) });
+			body.messages.push({ role: "system", content: sampleJson });
 			body.messages.push({
 				role: "user",
 				content:

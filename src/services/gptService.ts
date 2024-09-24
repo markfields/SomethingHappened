@@ -35,13 +35,13 @@ export class GPTService {
 		}
 	}
 
-	public static async prompt(momentDescription: string): Promise<IGPTPromptResponse> {
+	public static async prompt(momentDescription: string, sampleJson?: string): Promise<IGPTPromptResponse> {
 		const instance = GPTService.instance;
 		instance.createPrompterIfNeeded();
 
 		let response: IGPTPromptResponse | undefined;
 		if (instance.gptPrompter !== undefined) {
-			response = await instance.gptPrompter(momentDescription);
+			response = await instance.gptPrompter(momentDescription, sampleJson);
 			if (response === undefined) {
 				console.error("AI failed to find story lines.");
 			}
@@ -92,7 +92,7 @@ export interface IGPTPromptResponse {
 
 function createStoryLinePrompter(
 	msalInstance: PublicClientApplication,
-): (prompt: string) => Promise<IGPTPromptResponse | undefined> {
+): (prompt: string, sampleJson?: string) => Promise<IGPTPromptResponse | undefined> {
 	console.log("Creating Azure OpenAI prompter");
 
 	const endpoint =
@@ -109,16 +109,8 @@ function createStoryLinePrompter(
 		apiVersion: "2024-08-01-preview",
 	});
 
-	const bodyBase: ChatCompletionCreateParamsNonStreaming = {
-		messages: [
-			{ role: "system", content: storyLineSystemPrompt },
-			{ role: "system", content: JSON.stringify(sampleData) },
-			{
-				role: "user",
-				content:
-					"Here's what just happened. Can you suggest which storyline this likely belongs to?",
-			},
-		],
+	const body: ChatCompletionCreateParamsNonStreaming = {
+		messages: [],
 		model: "gpt-4o",
 		n: 1,
 		response_format: {
@@ -141,10 +133,20 @@ function createStoryLinePrompter(
 		},
 	};
 
-	return async (prompt) => {
+	return async (prompt, sampleJson?: string) => {
 		console.log("Prompting Azure OpenAI with:", prompt);
+		if (sampleJson === undefined) {
+			console.error("No sample data provided. Using default sample data.");
+		}
 		try {
-			const body = { ...bodyBase };
+			body.messages.length = 0;
+			body.messages.push({ role: "system", content: storyLineSystemPrompt });
+			body.messages.push({ role: "system", content: sampleJson ?? JSON.stringify(sampleData) });
+			body.messages.push({
+				role: "user",
+				content:
+					"Here's what just happened. Can you suggest which storyline this likely belongs to?",
+			});
 			body.messages.push({ role: "user", content: prompt });
 			const result = await openai.chat.completions.create(body);
 			if (!result.created) {

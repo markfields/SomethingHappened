@@ -210,9 +210,17 @@ export function LifeView(props: {
 	}, []);
 
 	function addMoment(momentDescription: string) {
+		const sampleData = [...props.life.moments.values()].flatMap(
+			(m) => (
+				m.storyLineIds.map(
+					(id) => ({ moment: m.description, storyLine: props.life.storyLines.get(id)?.name })
+				)
+			)
+		);
+		console.log("sampleData", sampleData);
 		// ! TODO: try and populate what we have, and have GPTService update it when response comes in
 		// ! TODO: add support for local service when not connected to GPT API
-		GPTService.prompt(momentDescription)
+		GPTService.prompt(momentDescription, JSON.stringify(sampleData))
 			.then((response: IGPTPromptResponse) => {
 				const storyLine = props.life.storyLines.createAndGetStoryLine(
 					response.storyLine.name,

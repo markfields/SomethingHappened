@@ -250,12 +250,11 @@ export function LifeView(props: {
 				moments={props.life.moments}
 				{...props}
 			/>
-			<div className="responsive-div">
+			<div className="responsive-div" style={{width: "350px"}}>
 				<TextField
 					variant="standard"
 					value={inputValue}
 					placeholder="What just happened?"
-					style={{ width: "20rem" }}
 					InputProps={{
 						style: { color: "#fff", fontSize: "2rem" },
 						className: "roboto-bold",

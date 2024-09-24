@@ -255,26 +255,30 @@ export function LifeView(props: {
 				backgroundColor: "#121212",
 			}}
 		>
-			<StoryLinesViewContent
-				storyLines={props.life.storyLines}
-				moments={props.life.moments}
-				{...props}
-			/>
-			<div className="responsive-div" style={{width: "350px"}}>
-				<TextField
-					variant="standard"
-					value={inputValue}
-					placeholder="What just happened?"
-					InputProps={{
-						style: { color: "#fff", fontSize: "2rem" },
-						className: "roboto-bold",
-						disableUnderline: true,
-					}}
-					inputRef={inputRef}
-					onChange={(e) => setInputValue(e.target.value)}
-					onKeyDown={(e) => handleKeyDown(e)}
+			<div style={{ flex: 4, width: "100%", overflow: "auto" }}>
+				<StoryLinesViewContent
+					storyLines={props.life.storyLines}
+					moments={props.life.moments}
+					{...props}
 				/>
-				<VoiceInput life={props.life} handleMicClick={addMoment} />
+			</div>
+			<div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", width: "100%", overflow: "auto", backgroundColor: "#1b242e", }}>
+				<div className="input-div" style={{ width: "350px" }}>
+					<TextField
+						variant="standard"
+						value={inputValue}
+						placeholder="What just happened?"
+						InputProps={{
+							style: { color: "#fff", fontSize: "2rem" },
+							className: "roboto-bold",
+							disableUnderline: true,
+						}}
+						inputRef={inputRef}
+						onChange={(e) => setInputValue(e.target.value)}
+						onKeyDown={(e) => handleKeyDown(e)}
+					/>
+					<VoiceInput life={props.life} handleMicClick={addMoment} />
+				</div>
 			</div>
 		</div>
 	);

@@ -263,10 +263,7 @@ export function LifeView(props: {
 				/>
 			</div>
 			<div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", width: "100%", overflow: "auto", backgroundColor: "#1b242e", }}>
-				<div
-					className="input-div" 
-					style={{ width: "350px" }}
-				>
+				<div className="input-div" style={{ width: "350px" }}>
 					<TextField
 						variant="standard"
 						value={inputValue}

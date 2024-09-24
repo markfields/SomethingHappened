@@ -38,7 +38,7 @@ export function VoiceInput(props: {
 			SpeechRecognition.abortListening();
 			console.log("transcript: " + transcript);
 
-			props.handleMicClick(transcript + " - " + getDateTime());
+			props.handleMicClick(transcript);
 			resetTranscript();
 			if (props.setIsOpen) {
 				props.setIsOpen(false);

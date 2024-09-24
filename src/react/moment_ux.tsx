@@ -29,6 +29,7 @@ export function RootMomentWrapper(props: {
 	clientId: string;
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
+	color: string;
 }): JSX.Element {
 	const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -40,7 +41,7 @@ export function RootMomentWrapper(props: {
 				flexDirection: "column",
 				justifyContent: "center",
 				zIndex: 10,
-				backgroundColor: "#ccd5ae",
+				backgroundColor: "#a3b18a",
 			}}
 		>
 			<MomentView setIsDetailsShowing={setIsDetailsOpen} {...props} />
@@ -61,12 +62,13 @@ export function MomentView(props: {
 	clientSession: ClientSession;
 	fluidMembers: IMember[];
 	setIsDetailsShowing: (arg: boolean) => void;
+	color: string;
 }): JSX.Element {
 	const mounted = useRef(false);
 	let unscheduled = false;
 
-	const color = "#fefae0";
-	const selectedColor = "#ccd5ae";
+	const color = "#fffcf2";
+	const selectedColor = props.color;
 
 	const parent = Tree.parent(props.moment);
 	// if (!Tree.is(parent, Moments)) return <></>;
@@ -195,9 +197,16 @@ export function MomentView(props: {
 		}
 	};
 
-	let borderPosition = unscheduled ? "borderLeft" : "borderTop";
 	let hoverMovement = unscheduled ? "translateX(12px)" : "translateY(12px)";
-
+	let date = new Date(props.moment.created);
+	let options: Intl.DateTimeFormatOptions = {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		hour: "numeric",
+		minute: "numeric",
+		hour12: true,
+	};
 	return (
 		<Box
 			onClick={(e) => handleClick(e)}
@@ -232,7 +241,11 @@ export function MomentView(props: {
 						moment={props.moment}
 						setIsDetailsShowing={props.setIsDetailsShowing}
 					/>
-					<MomentTitle moment={props.moment} update={update} />
+					<MomentTitle moment={props.moment} update={update} selected={selected} />
+
+					<h5 style={{ color: "#121212", marginLeft: "10px", fontSize: "0.65rem" }}>
+						{date.toLocaleString("en-US", options)}
+					</h5>
 					<RemoteSelection show={remoteSelected} />
 				</Paper>
 			</Box>
@@ -258,6 +271,7 @@ function RemoteSelection(props: { show: boolean }): JSX.Element {
 function MomentTitle(props: {
 	moment: Moment;
 	update: (value: selectAction) => void;
+	selected: boolean;
 }): JSX.Element {
 	// The text field updates the Fluid data model on every keystroke in this demo.
 	// This works well with small strings but doesn't scale to very large strings.
@@ -275,7 +289,16 @@ function MomentTitle(props: {
 
 	return (
 		<textarea
-			className="p-2 bg-transparent h-full w-full resize-none z-50 focus:outline-none"
+			style={{
+				padding: "0.5rem",
+				color: "#121212",
+				backgroundColor: "transparent",
+				height: "100%",
+				width: "100%",
+				resize: "none",
+				zIndex: 50,
+				outline: "none",
+			}}
 			value={props.moment.description}
 			readOnly={true}
 			onClick={(e) => handleClick(e)}

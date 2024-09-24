@@ -262,9 +262,9 @@ export function LifeView(props: {
 					{...props}
 				/>
 			</div>
-			<div style={{ flex: 1, width: "100%", overflow: "auto" }}>
+			<div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", width: "100%", overflow: "auto", backgroundColor: "#1b242e", }}>
 				<div
-					className="responsive-div" 
+					className="input-div" 
 					style={{ width: "350px" }}
 				>
 					<TextField

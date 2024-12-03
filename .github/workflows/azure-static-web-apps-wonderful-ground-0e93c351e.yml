@@ -19,6 +19,21 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Authenticate to Azure Artifacts Feed
+        run: |
+          echo "registry=https://${NPM_REGISTRY_BASE}registry/" > ./.npmrc
+          echo "always-auth=true" >> ./.npmrc
+          encodedToken=$(echo -n $AZURE_ARTIFACTS_TOKEN | base64)
+          echo "//${NPM_REGISTRY_BASE}registry/:username=placeholder" >> ./.npmrc
+          echo "//${NPM_REGISTRY_BASE}registry/:_password=\"$encodedToken\"" >> ./.npmrc
+          echo "//${NPM_REGISTRY_BASE}registry/:email=placeholder" >> ./.npmrc
+          echo "//${NPM_REGISTRY_BASE}:username=placeholder" >> ./.npmrc
+          echo "//${NPM_REGISTRY_BASE}:_password=\"$encodedToken\"" >> ./.npmrc
+          echo "//${NPM_REGISTRY_BASE}:email=placeholder" >> ./.npmrc
+          echo "Using npm registry: $(npm config get registry)"
+        env:
+          AZURE_ARTIFACTS_TOKEN: ${{ secrets.AZURE_ARTIFACTS_TOKEN }}
+          NPM_REGISTRY_BASE: ${{ vars.NPM_REGISTRY_BASE}}
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -39,6 +54,7 @@ jobs:
           CLIENT_ID: 34f56a17-24be-4ec3-9709-cc9c04f42f5c
           TOKEN_PROVIDER_URL: https://fhl-token-provider.azurewebsites.net
           AZURE_OPENAI_ENDPOINT: https://fhlsep2024.openai.azure.com
+          TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest

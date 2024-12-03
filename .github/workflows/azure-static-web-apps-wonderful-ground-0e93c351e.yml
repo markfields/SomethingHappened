@@ -19,21 +19,21 @@ jobs:
         with:
           submodules: true
           lfs: false
-      - name: Authenticate to Azure Artifacts Feed
-        run: |
-          echo "registry=https://${NPM_REGISTRY_BASE}registry/" > ./.npmrc
-          echo "always-auth=true" >> ./.npmrc
-          encodedToken=$(echo -n $AZURE_ARTIFACTS_TOKEN | base64)
-          echo "//${NPM_REGISTRY_BASE}registry/:username=placeholder" >> ./.npmrc
-          echo "//${NPM_REGISTRY_BASE}registry/:_password=\"$encodedToken\"" >> ./.npmrc
-          echo "//${NPM_REGISTRY_BASE}registry/:email=placeholder" >> ./.npmrc
-          echo "//${NPM_REGISTRY_BASE}:username=placeholder" >> ./.npmrc
-          echo "//${NPM_REGISTRY_BASE}:_password=\"$encodedToken\"" >> ./.npmrc
-          echo "//${NPM_REGISTRY_BASE}:email=placeholder" >> ./.npmrc
-          echo "Using npm registry: $(npm config get registry)"
-        env:
-          AZURE_ARTIFACTS_TOKEN: ${{ secrets.AZURE_ARTIFACTS_TOKEN }}
-          NPM_REGISTRY_BASE: ${{ vars.NPM_REGISTRY_BASE}}
+      # - name: Authenticate to Azure Artifacts Feed
+      #   run: |
+      #     echo "registry=https://${NPM_REGISTRY_BASE}registry/" > ./.npmrc
+      #     echo "always-auth=true" >> ./.npmrc
+      #     encodedToken=$(echo -n $AZURE_ARTIFACTS_TOKEN | base64)
+      #     echo "//${NPM_REGISTRY_BASE}registry/:username=placeholder" >> ./.npmrc
+      #     echo "//${NPM_REGISTRY_BASE}registry/:_password=\"$encodedToken\"" >> ./.npmrc
+      #     echo "//${NPM_REGISTRY_BASE}registry/:email=placeholder" >> ./.npmrc
+      #     echo "//${NPM_REGISTRY_BASE}:username=placeholder" >> ./.npmrc
+      #     echo "//${NPM_REGISTRY_BASE}:_password=\"$encodedToken\"" >> ./.npmrc
+      #     echo "//${NPM_REGISTRY_BASE}:email=placeholder" >> ./.npmrc
+      #     echo "Using npm registry: $(npm config get registry)"
+      #   env:
+      #     AZURE_ARTIFACTS_TOKEN: ${{ secrets.AZURE_ARTIFACTS_TOKEN }}
+      #     NPM_REGISTRY_BASE: ${{ vars.NPM_REGISTRY_BASE}}
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
